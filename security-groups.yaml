@@ -1,0 +1,114 @@
+Description: Deployment of Security Groups for cloud.mikesoh.com
+Parameters:
+  deployDate:
+    Type: String
+    Description: Date for the deployment
+    Default: 1970-01-01
+  commitSha: 
+    Type: String
+    Description: Git commit SHA
+    Default: nocommit
+  galacticaIp:
+    Type: String
+    Description: IP4 address for galactica (or whatever IP address you want to allow)
+    Default: 127.0.0.1/32
+
+Resources:
+  AllowPingSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow ICMP Ping
+      GroupName: Allow Ping [managed]
+      SecurityGroupIngress:
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+
+  WebPortsSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Open Standard Web Ports
+      GroupName: Web Ports [managed]
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+
+  EmailPortsSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow Email Ports
+      GroupName: Email Ports [managed]
+      SecurityGroupIngress:
+        - Description: SMTPS
+          IpProtocol: tcp
+          FromPort: 465
+          ToPort: 465
+          CidrIp: 0.0.0.0/0
+        - Description: SMTP
+          IpProtocol: tcp
+          FromPort: 25
+          ToPort: 25
+          CidrIp: 0.0.0.0/0
+        - Description: SMTP 26 as some ISPs block port 25
+          IpProtocol: tcp
+          FromPort: 26
+          ToPort: 26
+          CidrIp: 0.0.0.0/0
+        - Description: IMAPS
+          IpProtocol: tcp
+          FromPort: 993
+          ToPort: 993
+          CidrIp: 0.0.0.0/0
+        - Description: IMAP
+          IpProtocol: tcp
+          FromPort: 143
+          ToPort: 143
+          CidrIp: 0.0.0.0/0
+        - Description: POP3
+          IpProtocol: tcp
+          FromPort: 110
+          ToPort: 110
+          CidrIp: 0.0.0.0/0
+        - Description: POP3S
+          IpProtocol: tcp
+          FromPort: 995
+          ToPort: 995
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+
+  galacticaSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow all traffic from galactica
+      GroupName: galactica All Traffic [managed]
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: !Ref 'galacticaIp'
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
