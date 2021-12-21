@@ -103,9 +103,7 @@ Resources:
       GroupDescription: Allow all traffic from galactica
       GroupName: galactica All Traffic [managed]
       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 0
-          ToPort: 65535
+        - IpProtocol: -1
           CidrIp: !Ref 'galacticaIp'
       Tags:
         - Key: managedBy
