@@ -1,0 +1,33 @@
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: starbuck-wsl-ubuntu-rsa-4096-2021.07.10
+  InstanceType:
+    Description: EC2 Instance Type.  Default is t3a.small
+    Type: String
+    Default: t3a.small
+    AllowedValues: ['t3.micro', 't3.small', 't3.medium', 't3a.micro', 't3a.small', 't3a.medium']
+    
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-04505e74c0741db8d
+    us-east-2:
+      AMI: ami-0fb653ca2d3203ac1
+    us-west-1:
+      AMI: ami-01f87c43e618bf8f0
+    us-west-2:
+      AMI: ami-0892d3c7ee96c0bf7
+
+Resources:
+  Ec2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      KeyName: !Ref KeyName
+      ImageId: !FindInMap 
+        - RegionMap
+        - !Ref 'AWS::Region'
+        - AMI
+      InstanceType: !Ref 'InstanceType'
+      UserData: !Base64 'echo Hello World!'
