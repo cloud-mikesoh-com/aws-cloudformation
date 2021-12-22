@@ -102,7 +102,30 @@ Resources:
                   # EC2 instances.
                   export BRANCH_NAME="${BranchName}"
                   export PROFILE="${Profile}"
+
+                  echo Installing aws-cfn-bootstrap
+                  curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz -o /tmp/aws-cfn-bootstrap.tar.gz
+
+                  mkdir -p /opt/aws/bin
+                  python3 -m easy_install --script-dir /opt/aws/bin /tmp/aws-cfn-bootstrap.tar.gz
+
                   BOOTSTRAP_FILE="https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/${!BRANCH_NAME}/bootstrap.sh"
 
                   echo Downloading Bootstrap from ${!BOOTSTRAP_FILE}
                   bash <(curl -s ${!BOOTSTRAP_FILE})
+
+                  echo Sending signal: $?
+                  /opt/aws/bin/cfn-signal -e $? \
+                    --stack ${AWS::StackName} \
+                    --region ${AWS::Region} \
+                    --resource SpotFleetRequest \
+                    '${InstanceWaitHandle}'
+  InstanceWaitHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  InstanceWaitCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'SpotFleetRequest'
+    Properties:
+      Count: 1
+      Handle: !Ref 'InstanceWaitHandle'
+      Timeout: 600
