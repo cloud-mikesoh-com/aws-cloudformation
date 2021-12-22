@@ -1,4 +1,4 @@
-Description: Deployment of Security Groups for cloud.mikesoh.com
+Description: Deployment of Galactica Security Group
 Parameters:
   deployDate:
     Type: String
@@ -23,7 +23,7 @@ Resources:
       GroupName: galactica All Traffic [managed]
       SecurityGroupIngress:
         - IpProtocol: -1
-          CidrIp: !Join ['', !Ref 'galacticaIp', '/32']
+          CidrIp: !Join ['', [!Ref 'galacticaIp', '/32'] ]
       Tags:
         - Key: managedBy
           Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
