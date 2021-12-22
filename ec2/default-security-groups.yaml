@@ -8,10 +8,6 @@ Parameters:
     Type: String
     Description: Git commit SHA
     Default: nocommit
-  galacticaIp:
-    Type: String
-    Description: IP4 address for galactica (or whatever IP address you want to allow)
-    Default: 127.0.0.1/32
 
 Resources:
   AllowPingSG:
@@ -97,20 +93,6 @@ Resources:
         - Key: deployDate
           Value: !Ref 'deployDate'
 
-  galacticaSG:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: Allow all traffic from galactica
-      GroupName: galactica All Traffic [managed]
-      SecurityGroupIngress:
-        - IpProtocol: -1
-          CidrIp: !Ref 'galacticaIp'
-      Tags:
-        - Key: managedBy
-          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
-        - Key: deployDate
-          Value: !Ref 'deployDate'
-
 Outputs:
   AllowPingSGId:
     Value: !GetAtt AllowPingSG.GroupId
@@ -124,7 +106,3 @@ Outputs:
     Value: !GetAtt EmailPortsSG.GroupId
     Export: 
       Name: !Join [':', [ !Ref 'AWS::StackName', 'EmailPortsSG' ]]
-  galacticaSGId:
-    Value: !GetAtt galacticaSG.GroupId
-    Export: 
-      Name: !Join [':', [ !Ref 'AWS::StackName', 'galacticaSG' ]]
