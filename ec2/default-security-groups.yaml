@@ -114,9 +114,17 @@ Resources:
 Outputs:
   AllowPingSGId:
     Value: !GetAtt AllowPingSG.GroupId
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'AllowPingSG' ]]
   WebPortsSGId:
     Value: !GetAtt WebPortsSG.GroupId
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'WebPortsSG' ]]
   EmailPortsSGId:
     Value: !GetAtt EmailPortsSG.GroupId
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'EmailPortsSG' ]]
   galacticaSGId:
     Value: !GetAtt galacticaSG.GroupId
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'galacticaSG' ]]
