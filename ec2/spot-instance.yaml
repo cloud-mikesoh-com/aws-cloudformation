@@ -114,11 +114,12 @@ Resources:
                   echo Downloading Bootstrap from ${!BOOTSTRAP_FILE}
                   bash <(curl -s ${!BOOTSTRAP_FILE})
 
+                  export AWS_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
                   echo Sending signal: $?
                   /opt/aws/bin/cfn-signal -e $? \
                     --stack ${AWS::StackName} \
                     --region ${AWS::Region} \
-                    --resource SpotFleetRequest \
+                    --data '${!AWS_HOSTNAME}' \
                     '${InstanceWaitHandle}'
   InstanceWaitHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
@@ -129,3 +130,8 @@ Resources:
       Count: 1
       Handle: !Ref 'InstanceWaitHandle'
       Timeout: 600
+
+Outputs:
+  InstancePublicHostname:
+    Description: Public Hostname of the deployed Spot Instance
+    Value: !GetAtt InstanceWaitCondition.Data
