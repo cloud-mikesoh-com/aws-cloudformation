@@ -1,5 +1,13 @@
 Description: Deploy Spot Instance
 Parameters:
+  commitSha: 
+    Type: String
+    Description: Git commit SHA
+    Default: nocommit
+  deployDate:
+    Type: String
+    Description: Date for the deployment
+    Default: 1970-01-01 00:00:00
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -18,14 +26,14 @@ Parameters:
     Type: String
     Description: Expiration for Spot Request
     Default: 2030-12-31T23:59:59Z
-  commitSha: 
+  BranchName:
     Type: String
-    Description: Git commit SHA
-    Default: nocommit
-  deployDate:
+    Description: Which branch to use when pulling bootstrap.sh from aws-bootstrap repository
+    Default: main
+  Profile:
     Type: String
-    Description: Date for the deployment
-    Default: 1970-01-01 00:00:00
+    Description: What profiles to run when executing deployment
+    Default: docker
     
 Mappings:
   RegionArchAMI:
@@ -86,4 +94,15 @@ Resources:
                   DeleteOnTermination: true
                   VolumeSize: 8
                   VolumeType: gp3
-            UserData: !Base64 'echo Hello World!'
+            UserData: 
+              Fn::Base64:
+                !Sub | 
+                  #!/bin/bash -xe
+                  # This file should be copied into the User Data section of creating AWS
+                  # EC2 instances.
+                  export BRANCH_NAME="${BranchName}"
+                  export PROFILE="${Profile}"
+                  BOOTSTRAP_FILE="https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/${!BRANCH_NAME}/bootstrap.sh"
+
+                  echo Downloading Bootstrap from ${!BOOTSTRAP_FILE}
+                  bash <(curl -s ${!BOOTSTRAP_FILE})
