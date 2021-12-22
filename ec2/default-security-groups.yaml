@@ -3,7 +3,7 @@ Parameters:
   deployDate:
     Type: String
     Description: Date for the deployment
-    Default: 1970-01-01
+    Default: 1970-01-01 00:00:00
   commitSha: 
     Type: String
     Description: Git commit SHA
@@ -110,3 +110,13 @@ Resources:
           Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
         - Key: deployDate
           Value: !Ref 'deployDate'
+
+Outputs:
+  AllowPingSGId:
+    Value: !GetAtt AllowPingSG.GroupId
+  WebPortsSGId:
+    Value: !GetAtt WebPortsSG.GroupId
+  EmailPortsSGId:
+    Value: !GetAtt EmailPortsSG.GroupId
+  galacticaSGId:
+    Value: !GetAtt galacticaSG.GroupId
