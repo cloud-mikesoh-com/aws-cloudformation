@@ -1,0 +1,89 @@
+Description: Deploy Spot Instance
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: starbuck-wsl-ubuntu-rsa-4096-2021.07.10
+  InstanceType:
+    Description: EC2 Instance Type.  Default is t3a.small
+    Type: String
+    Default: t3a.small
+    AllowedValues: ['t3.micro', 't3.small', 't3.medium', 't3a.micro', 't3a.small', 't3a.medium']
+  Architecture:
+    Description: 'Processor Architecture type.  Valid values: amd64, arm64.  Default amd64'
+    Type: String
+    Default: amd64
+    AllowedValues: ['amd64', 'arm64']
+  Expiry:
+    Type: String
+    Description: Expiration for Spot Request
+    Default: 2030-12-31T23:59:59Z
+  commitSha: 
+    Type: String
+    Description: Git commit SHA
+    Default: nocommit
+  deployDate:
+    Type: String
+    Description: Date for the deployment
+    Default: 1970-01-01 00:00:00
+    
+Mappings:
+  RegionArchAMI:
+    us-east-1:
+      amd64: ami-04505e74c0741db8d
+    us-east-2:
+      amd64: ami-0fb653ca2d3203ac1
+    us-west-1:
+      amd64: ami-01f87c43e618bf8f0
+    us-west-2:
+      amd64: ami-0892d3c7ee96c0bf7
+  MaxSpotPrice:
+    t3.micro: 
+      SpotPrice: '0.005'
+    t3a.micro: 
+      SpotPrice: '0.005'
+    t3.small: 
+      SpotPrice: '0.01'
+    t3a.small: 
+      SpotPrice: '0.01'
+    t3.medium: 
+      SpotPrice: '0.015'
+    t3a.medium: 
+      SpotPrice: '0.015'
+
+Resources:
+  SpotFleetRequest:
+    Type: 'AWS::EC2::SpotFleet'
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: lowestPrice
+        IamFleetRole: 'arn:aws:iam::426869176820:role/aws-service-role/spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet'
+        SpotPrice: !FindInMap [MaxSpotPrice, !Ref 'InstanceType', 'SpotPrice']
+        TargetCapacity: 1
+        Type: request
+        ValidUntil: !Ref Expiry
+        TerminateInstancesWithExpiration: false
+        LaunchSpecifications:
+          - EbsOptimized: false
+            InstanceType: !Ref 'InstanceType'
+            ImageId: !FindInMap [RegionArchAMI, !Ref 'AWS::Region', !Ref 'Architecture']
+            IamInstanceProfile: 
+              Arn: 'arn:aws:iam::426869176820:instance-profile/ec2-user-role'
+            TagSpecifications:
+              - ResourceType: instance
+                Tags:
+                  - Key: managedBy
+                    Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+                  - Key: deployDate
+                    Value: !Ref 'deployDate'
+            SubnetId: 'subnet-b5d960ec'
+            SecurityGroups:
+              - GroupId: !ImportValue 'SecurityGroup-Deploy:galacticaSG'
+            KeyName: !Ref KeyName
+            BlockDeviceMappings:
+              - DeviceName: '/dev/sda1'
+                Ebs:
+                  DeleteOnTermination: true
+                  VolumeSize: 8
+                  VolumeType: gp3
+            UserData: !Base64 'echo Hello World!'
