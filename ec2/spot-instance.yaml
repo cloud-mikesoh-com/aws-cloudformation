@@ -78,7 +78,7 @@ Resources:
                     Value: !Ref 'deployDate'
             SubnetId: 'subnet-b5d960ec'
             SecurityGroups:
-              - GroupId: !ImportValue 'SecurityGroup-Deploy:galacticaSG'
+              - GroupId: !ImportValue 'Galactica-SG-Deploy:galacticaSG'
             KeyName: !Ref KeyName
             BlockDeviceMappings:
               - DeviceName: '/dev/sda1'
