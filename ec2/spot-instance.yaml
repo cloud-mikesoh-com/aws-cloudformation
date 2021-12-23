@@ -11,7 +11,7 @@ Parameters:
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
-    Default: starbuck-wsl-ubuntu-rsa-4096-2021.07.10
+    Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
   InstanceType:
     Description: EC2 Instance Type.  Default is t3a.small
     Type: String
@@ -34,6 +34,10 @@ Parameters:
     Type: String
     Description: What profiles to run when executing deployment
     Default: docker
+  ConfigSets:
+    Type: String
+    Description: What config sets to run
+    Default: default
     
 Mappings:
   RegionArchAMI:
@@ -62,6 +66,29 @@ Mappings:
 Resources:
   SpotFleetRequest:
     Type: 'AWS::EC2::SpotFleet'
+    Metadata:
+      AWS::CloudFormation::Init: 
+        configSets: 
+          ascending: 
+            - "config1"
+            - "config2"
+          descending: 
+            - "config2"
+            - "config1"
+        config1: 
+          commands: 
+            test: 
+              command: "echo \"$CFNTEST\" >> /tmp/test.txt"
+              env: 
+                CFNTEST: "I come from config1."
+              cwd: "~"
+        config2: 
+          commands: 
+            test: 
+              command: "echo \"$CFNTEST\" >> /tmp/test.txt"
+              env: 
+                CFNTEST: "I come from config2"
+              cwd: "~"
     Properties:
       SpotFleetRequestConfigData:
         AllocationStrategy: lowestPrice
@@ -109,10 +136,12 @@ Resources:
                   mkdir -p /opt/aws/bin
                   python3 -m easy_install --script-dir /opt/aws/bin /tmp/aws-cfn-bootstrap.tar.gz
 
-                  BOOTSTRAP_FILE="https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/${!BRANCH_NAME}/bootstrap.sh"
-
-                  echo Downloading Bootstrap from ${!BOOTSTRAP_FILE}
-                  bash <(curl -s ${!BOOTSTRAP_FILE})
+                  echo Initializing instance...
+                  /opt/aws/bin/cfn-init -v \
+                    --stack ${AWS::StackName} \
+                    --region ${AWS::Region} \
+                    --resource  "SpotFleetRequest"\
+                    --configsets descending
 
                   export AWS_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
                   echo Sending signal: $?
@@ -120,7 +149,6 @@ Resources:
                     --stack ${AWS::StackName} \
                     --region ${AWS::Region} \
                     --data "ipv4_hostname: ${!AWS_HOSTNAME}" \
-                    --reason "ipv4_hostname: ${!AWS_HOSTNAME}" \
                     '${InstanceWaitHandle}'
   InstanceWaitHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
