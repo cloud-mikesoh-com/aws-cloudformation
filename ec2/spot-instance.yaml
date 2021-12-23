@@ -119,7 +119,8 @@ Resources:
                   /opt/aws/bin/cfn-signal -e $? \
                     --stack ${AWS::StackName} \
                     --region ${AWS::Region} \
-                    --data '${!AWS_HOSTNAME}' \
+                    --data "ipv4_hostname: ${!AWS_HOSTNAME}" \
+                    --reason "ipv4_hostname: ${!AWS_HOSTNAME}" \
                     '${InstanceWaitHandle}'
   InstanceWaitHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
