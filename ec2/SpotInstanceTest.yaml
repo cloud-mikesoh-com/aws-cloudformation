@@ -69,26 +69,48 @@ Resources:
     Metadata:
       AWS::CloudFormation::Init: 
         configSets: 
-          ascending: 
-            - "config1"
-            - "config2"
-          descending: 
-            - "config2"
-            - "config1"
-        config1: 
+          default: 
+            - "standard"
+            - "AwsCli"
+        standard: 
+          files:
+            /home/ubuntu/.ssh/authorized_keys:
+              source: "https://github.com/sohmc/ssh-keys/releases/download/latest/authorized_keys"
+              mode: '000600'
+              owner: ubuntu
+              group: ubuntu
+          commands:
+            NewRelicAgent:
+              test: test -e /etc/newrelic-infra.yml
+              ignoreErrors: true
+              command: |
+                #!/bin/bash -xe
+                echo "standard:NewRelicAgent" >> /tmp/test.txt
+                cat /etc/lsb-release
+                curl -s https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg | sudo apt-key add -
+                printf "deb https://download.newrelic.com/infrastructure_agent/linux/apt focal main" | sudo tee -a /etc/apt/sources.list.d/newrelic-infra.list
+                apt-get update
+                apt-get install newrelic-infra -y
+        
+        AwsCli:
+          packages:
+            apt:
+              zip: []
+              unzip: []
           commands: 
-            test: 
-              command: "echo \"$CFNTEST\" >> /tmp/test.txt"
-              env: 
-                CFNTEST: "I come from config1."
-              cwd: "~"
-        config2: 
-          commands: 
-            test: 
-              command: "echo \"$CFNTEST\" >> /tmp/test.txt"
-              env: 
-                CFNTEST: "I come from config2"
-              cwd: "~"
+            InstallAwsCli:
+              ignoreErrors: true
+              command: |
+                #!/bin/bash -xe
+                cd /tmp
+
+                echo Downloading awscliv2
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                unzip awscliv2.zip
+                ./aws/install
+
+                aws --version >> /tmp/test.txt
+
     Properties:
       SpotFleetRequestConfigData:
         AllocationStrategy: lowestPrice
@@ -140,8 +162,8 @@ Resources:
                   /opt/aws/bin/cfn-init -v \
                     --stack ${AWS::StackName} \
                     --region ${AWS::Region} \
-                    --resource  "SpotFleetRequest"\
-                    --configsets descending
+                    --resource "SpotFleetRequest" \
+                    --configsets ${ConfigSets}
 
                   export AWS_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
                   echo Sending signal: $?

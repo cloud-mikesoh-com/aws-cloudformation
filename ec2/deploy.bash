@@ -1,11 +1,9 @@
-#!/bin/bash
+#!/bin/bash -xe
 
 export SHA=$(git rev-parse HEAD)
 export DEPLOY_DATE=$(date -Isec)
 export EXPIRY=$(date -u -Isec -d "+15 minutes" | sed 's/+00:00$/Z/')
 export VERB=''
-
-set -ev
 
 if [[ $1 == 'create' ]]; then
   VERB='create-stack'
