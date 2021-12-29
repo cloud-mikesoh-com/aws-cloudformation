@@ -26,14 +26,6 @@ Parameters:
     Type: String
     Description: Expiration for Spot Request
     Default: '2030-12-31T23:59:59Z'
-  BranchName:
-    Type: String
-    Description: Which branch to use when pulling bootstrap.sh from aws-bootstrap repository
-    Default: main
-  Profile:
-    Type: String
-    Description: What profiles to run when executing deployment
-    Default: docker
   ConfigSets:
     Type: String
     Description: What config sets to run
