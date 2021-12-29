@@ -70,16 +70,22 @@ Resources:
       AWS::CloudFormation::Init: 
         configSets: 
           default: 
-            - "standard"
-            - "AwsCli"
+            - 'AwsCli'
+            - 'standard'
         standard: 
           files:
             /home/ubuntu/.ssh/authorized_keys:
-              source: "https://github.com/sohmc/ssh-keys/releases/download/latest/authorized_keys"
+              source: 'https://github.com/sohmc/ssh-keys/releases/download/latest/authorized_keys'
               mode: '000600'
               owner: ubuntu
               group: ubuntu
           commands:
+            CopyNewRelicLicense:
+              command: |
+                #!/bin/bash -xe
+
+                echo 'About to copy NewRelic license from s3 bucket' >> /tmp/test.txt
+
             NewRelicAgent:
               test: test -e /etc/newrelic-infra.yml
               ignoreErrors: true
@@ -87,11 +93,25 @@ Resources:
                 #!/bin/bash -xe
                 echo "standard:NewRelicAgent" >> /tmp/test.txt
                 cat /etc/lsb-release
-                curl -s https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg | sudo apt-key add -
-                printf "deb https://download.newrelic.com/infrastructure_agent/linux/apt focal main" | sudo tee -a /etc/apt/sources.list.d/newrelic-infra.list
-                apt-get update
-                apt-get install newrelic-infra -y
-        
+                curl -s 'https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg' | sudo apt-key add -
+                printf 'deb https://download.newrelic.com/infrastructure_agent/linux/apt focal main' | sudo tee -a /etc/apt/sources.list.d/newrelic-infra.list
+                apt-get update && apt-get install newrelic-infra -y
+            
+            SignalStandardHandle:
+              test: test -e /home/ubuntu/.ssh/authorized_keys
+              ignoreErrors: false
+              command: !Sub |
+                  #!/bin/bash -xe
+
+                  echo "Sending signal for Standard Install" >> /tmp/test.txt
+
+                  /opt/aws/bin/cfn-signal -e 0 \
+                    --stack ${AWS::StackName} \
+                    --region ${AWS::Region} \
+                    '${InstallStandardHandle}'
+
+                  echo "Done" >> /tmp/test.txt
+
         AwsCli:
           packages:
             apt:
@@ -100,17 +120,26 @@ Resources:
           commands: 
             InstallAwsCli:
               ignoreErrors: true
-              command: |
+              command: !Sub |
                 #!/bin/bash -xe
                 cd /tmp
 
-                echo Downloading awscliv2
-                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                unzip awscliv2.zip
-                ./aws/install
+                echo 'starting AWS CLI installation' >> /tmp/test.txt
+                whoami >> /tmp/test.txt
+
+                curl -Ls 'https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/main/packages/01-awscli.sh' -o awscli.sh
+                bash awscli.sh
+
+                aws --version
+                
+                /opt/aws/bin/cfn-signal -e 0 \
+                  --stack ${AWS::StackName} \
+                  --region ${AWS::Region} \
+                  --reason "awsCli_version: $(aws --version) -- exit code: $?" \
+                  --data "awsCli_version: $(aws --version)" \
+                  '${InstallAwsCliHandle}'
 
                 aws --version >> /tmp/test.txt
-
     Properties:
       SpotFleetRequestConfigData:
         AllocationStrategy: lowestPrice
@@ -149,8 +178,6 @@ Resources:
                   #!/bin/bash -xe
                   # This file should be copied into the User Data section of creating AWS
                   # EC2 instances.
-                  export BRANCH_NAME="${BranchName}"
-                  export PROFILE="${Profile}"
 
                   echo Installing aws-cfn-bootstrap
                   curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz -o /tmp/aws-cfn-bootstrap.tar.gz
@@ -171,18 +198,42 @@ Resources:
                     --stack ${AWS::StackName} \
                     --region ${AWS::Region} \
                     --data "ipv4_hostname: ${!AWS_HOSTNAME}" \
-                    '${InstanceWaitHandle}'
-  InstanceWaitHandle: 
+                    '${HostNameHandle}'
+  InstallStandardHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
-  InstanceWaitCondition:
+  InstallStandardSoftwareCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
     DependsOn: 'SpotFleetRequest'
     Properties:
       Count: 1
-      Handle: !Ref 'InstanceWaitHandle'
+      Handle: !Ref 'InstallStandardHandle'
+      Timeout: 600
+
+  InstallAwsCliHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  InstallAwsCliCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'SpotFleetRequest'
+    Properties:
+      Count: 1
+      Handle: !Ref 'InstallAwsCliHandle'
+      Timeout: 7200
+
+  HostNameHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  HostNameCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'SpotFleetRequest'
+    Properties:
+      Count: 1
+      Handle: !Ref 'HostNameHandle'
       Timeout: 600
 
 Outputs:
   InstancePublicHostname:
     Description: Public Hostname of the deployed Spot Instance
-    Value: !GetAtt InstanceWaitCondition.Data
+    Value: !GetAtt HostNameCondition.Data
+
+  AwsCliVersion:
+    Description: Install Version of the AWS CLI
+    Value: !GetAtt InstallAwsCliCondition.Data
