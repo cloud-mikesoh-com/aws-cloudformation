@@ -39,9 +39,6 @@ Parameters:
     Description: What config sets to run
     Default: default
 
-Conditions:
-  AwsCliInstallOption: !Equals [!Ref ConfigSets, 'default']
-
 Mappings:
   RegionArchAMI:
     us-east-1:
@@ -83,6 +80,7 @@ Resources:
               mode: '000600'
               owner: ubuntu
               group: ubuntu
+          
           commands:
             SshKeyInstallSignal:
               test: test -e /home/ubuntu/.ssh/authorized_keys
@@ -242,6 +240,8 @@ Resources:
                     --data "ipv4_hostname: ${!AWS_HOSTNAME}" \
                     --reason "ipv4_hostname: ${!AWS_HOSTNAME}" \
                     '${HostNameHandle}'
+
+# Handles and Wait Conditions
   SshKeyInstallHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
   SshKeyInstallCondition:
