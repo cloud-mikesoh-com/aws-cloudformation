@@ -7,7 +7,7 @@ Parameters:
   deployDate:
     Type: String
     Description: Date for the deployment
-    Default: 1970-01-01 00:00:00
+    Default: '1970-01-01 00:00:00'
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -25,7 +25,7 @@ Parameters:
   Expiry:
     Type: String
     Description: Expiration for Spot Request
-    Default: 2030-12-31T23:59:59Z
+    Default: '2030-12-31T23:59:59Z'
   BranchName:
     Type: String
     Description: Which branch to use when pulling bootstrap.sh from aws-bootstrap repository
@@ -72,7 +72,7 @@ Resources:
           default:
             - 'SshKeys' 
             - 'AwsCli'
-            # - 'NewRelic'
+            - 'NewRelic'
         SshKeys:
           files:
             /home/ubuntu/.ssh/authorized_keys:
@@ -103,7 +103,7 @@ Resources:
 
                   echo "Done" >> /tmp/test.txt
 
-        NewRelicInstall: 
+              enabled: true
           commands:
             CopyNewRelicLicense:
               command: |
@@ -111,9 +111,9 @@ Resources:
 
                 echo 'About to copy NewRelic license from s3 bucket' >> /tmp/test.txt
 
-                aws s3 cp s3://mikesoh.com-configuration/newrelic-infra.yml /etc/ --recursive --quiet
+                ls -l /etc/newrelic-infra.yml >> /tmp/test.txt
 
-            NewRelicAgent:
+            InstallNewRelicAgent:
               test: test -e /etc/newrelic-infra.yml
               ignoreErrors: false
               command: |
@@ -220,7 +220,7 @@ Resources:
     Properties:
       Count: 1
       Handle: !Ref 'SshKeyInstallHandle'
-      Timeout: 120
+      Timeout: 600
 
   InstallAwsCliHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
