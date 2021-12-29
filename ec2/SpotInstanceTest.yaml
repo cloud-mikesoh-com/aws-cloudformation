@@ -69,10 +69,11 @@ Resources:
     Metadata:
       AWS::CloudFormation::Init: 
         configSets: 
-          default: 
+          default:
+            - 'SshKeys' 
             - 'AwsCli'
-            - 'standard'
-        standard: 
+            # - 'NewRelic'
+        SshKeys:
           files:
             /home/ubuntu/.ssh/authorized_keys:
               source: 'https://github.com/sohmc/ssh-keys/releases/download/latest/authorized_keys'
@@ -80,37 +81,49 @@ Resources:
               owner: ubuntu
               group: ubuntu
           commands:
+            SshKeyInstallSignal:
+              test: test -e /home/ubuntu/.ssh/authorized_keys
+              ignoreErrors: false
+              command: !Sub |
+                  #!/bin/bash -xe
+
+                  echo "Sending signal for SshKeyInstall" >> /tmp/test.txt
+
+                  FILESIZE=$(stat -c%s "~ubuntu/.ssh/authorized_keys")
+
+                  echo "Checking filesize of authorized_keys" >> /tmp/test.txt
+                  test -e ${!FILESIZE} > 150
+
+                  /opt/aws/bin/cfn-signal -e $? \
+                    --stack ${AWS::StackName} \
+                    --region ${AWS::Region} \
+                    --reason "ssh authorized_keys size: ${!FILESIZE} -- exit code: $?" \
+                    --data "ssh authorized_keys size: ${!FILESIZE} -- exit code: $?" \
+                    '${SshKeyInstallHandle}'
+
+                  echo "Done" >> /tmp/test.txt
+
+        NewRelicInstall: 
+          commands:
             CopyNewRelicLicense:
               command: |
                 #!/bin/bash -xe
 
                 echo 'About to copy NewRelic license from s3 bucket' >> /tmp/test.txt
 
+                aws s3 cp s3://mikesoh.com-configuration/newrelic-infra.yml /etc/ --recursive --quiet
+
             NewRelicAgent:
               test: test -e /etc/newrelic-infra.yml
-              ignoreErrors: true
+              ignoreErrors: false
               command: |
                 #!/bin/bash -xe
                 echo "standard:NewRelicAgent" >> /tmp/test.txt
-                cat /etc/lsb-release
+                cat /etc/newrelic-infra.yml >> /tmp/test.txt
+                
                 curl -s 'https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg' | sudo apt-key add -
                 printf 'deb https://download.newrelic.com/infrastructure_agent/linux/apt focal main' | sudo tee -a /etc/apt/sources.list.d/newrelic-infra.list
                 apt-get update && apt-get install newrelic-infra -y
-            
-            SignalStandardHandle:
-              test: test -e /home/ubuntu/.ssh/authorized_keys
-              ignoreErrors: false
-              command: !Sub |
-                  #!/bin/bash -xe
-
-                  echo "Sending signal for Standard Install" >> /tmp/test.txt
-
-                  /opt/aws/bin/cfn-signal -e 0 \
-                    --stack ${AWS::StackName} \
-                    --region ${AWS::Region} \
-                    '${InstallStandardHandle}'
-
-                  echo "Done" >> /tmp/test.txt
 
         AwsCli:
           packages:
@@ -132,7 +145,7 @@ Resources:
 
                 aws --version
                 
-                /opt/aws/bin/cfn-signal -e 0 \
+                /opt/aws/bin/cfn-signal -e $? \
                   --stack ${AWS::StackName} \
                   --region ${AWS::Region} \
                   --reason "awsCli_version: $(aws --version) -- exit code: $?" \
@@ -199,15 +212,15 @@ Resources:
                     --region ${AWS::Region} \
                     --data "ipv4_hostname: ${!AWS_HOSTNAME}" \
                     '${HostNameHandle}'
-  InstallStandardHandle: 
+  SshKeyInstallHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
-  InstallStandardSoftwareCondition:
+  SshKeyInstallCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
     DependsOn: 'SpotFleetRequest'
     Properties:
       Count: 1
-      Handle: !Ref 'InstallStandardHandle'
-      Timeout: 600
+      Handle: !Ref 'SshKeyInstallHandle'
+      Timeout: 120
 
   InstallAwsCliHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
