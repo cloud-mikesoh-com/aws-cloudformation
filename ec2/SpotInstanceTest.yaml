@@ -65,6 +65,10 @@ Resources:
             - 'SshKeys' 
             - 'AwsCli'
             - 'NewRelic'
+            - ConfigSet: 'DockerConfig'
+          DockerConfig:
+            - 'Docker'
+
         SshKeys:
           files:
             /home/ubuntu/.ssh/authorized_keys:
@@ -172,6 +176,48 @@ Resources:
                   '${InstallAwsCliHandle}'
 
                 aws --version >> /tmp/test.txt
+
+        Docker:
+          services:
+            DockerCeServices:
+              enabled: true
+              ensureRunning: true
+              commands:
+                - InstallDockerCE
+
+          commands:
+            InstallDockerCE:
+              ignoreErrors: true
+              command: |
+                #!/bin/bash -xe
+                cd /tmp
+
+                echo 'Starting Docker-CE installation...' >> /tmp/test.txt
+
+                curl -Ls 'https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/main/packages/50-docker.sh' -o docker.sh
+                bash docker.sh
+
+                /usr/sbin/usermod -aG docker ubuntu
+            
+            SignalInstallDockerCeCondition:
+              test: test -e /usr/bin/docker
+              ignoreErrors: false
+              command: !Sub |
+                #!/bin/bash -xe
+
+                /usr/bin/docker --version
+
+                /opt/aws/bin/cfn-signal -e $? \
+                  --stack ${AWS::StackName} \
+                  --region ${AWS::Region} \
+                  --reason "Docker_version: $(/usr/bin/docker --version) -- exit code: $?" \
+                  --data "Docker_version: $(/usr/bin/docker --version) -- exit code: $?" \
+                  '${InstallDockerCeHandle}'
+
+                /usr/bin/docker --version >> /tmp/test.txt
+
+                echo 'Docker install completed' >> /tmp/test.txt
+
     Properties:
       SpotFleetRequestConfigData:
         AllocationStrategy: lowestPrice
@@ -252,7 +298,7 @@ Resources:
     Properties:
       Count: 1
       Handle: !Ref 'InstallAwsCliHandle'
-      Timeout: 7200
+      Timeout: 600
 
   InstallNewRelicAgentHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
@@ -262,7 +308,17 @@ Resources:
     Properties:
       Count: 1
       Handle: !Ref 'InstallNewRelicAgentHandle'
-      Timeout: 7200
+      Timeout: 600
+
+  InstallDockerCeHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  InstallDockerCeCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'SpotFleetRequest'
+    Properties:
+      Count: 1
+      Handle: !Ref 'InstallDockerCeHandle'
+      Timeout: 600
 
   HostNameHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
@@ -286,3 +342,7 @@ Outputs:
   NewRelicAgentVersion:
     Description: Version of the New Relic Agent Installed
     Value: !GetAtt InstallNewRelicAgentCondition.Data
+
+  DockerCeVersion:
+    Description: Version of the New Relic Agent Installed
+    Value: !GetAtt InstallDockerCeCondition.Data
