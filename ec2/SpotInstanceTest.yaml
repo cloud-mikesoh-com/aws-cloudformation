@@ -38,7 +38,10 @@ Parameters:
     Type: String
     Description: What config sets to run
     Default: default
-    
+
+Conditions:
+  AwsCliInstallOption: !Equals [!Ref ConfigSets, 'default']
+
 Mappings:
   RegionArchAMI:
     us-east-1:
@@ -103,13 +106,22 @@ Resources:
 
                   echo "Done" >> /tmp/test.txt
 
+        NewRelic: 
+          services:
+            NewRelicService:
               enabled: true
+              ensureRunning: true
+              commands:
+                - CopyNewRelicLicense
+                - InstallNewRelicAgent
+
           commands:
             CopyNewRelicLicense:
               command: |
                 #!/bin/bash -xe
 
                 echo 'About to copy NewRelic license from s3 bucket' >> /tmp/test.txt
+                aws s3 cp s3://mikesoh.com-configuration/newrelic-infra.yml /etc/
 
                 ls -l /etc/newrelic-infra.yml >> /tmp/test.txt
 
@@ -124,6 +136,23 @@ Resources:
                 curl -s 'https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg' | sudo apt-key add -
                 printf 'deb https://download.newrelic.com/infrastructure_agent/linux/apt focal main' | sudo tee -a /etc/apt/sources.list.d/newrelic-infra.list
                 apt-get update && apt-get install newrelic-infra -y
+
+            SignalNewRelicAgentCondition:
+              test: test -e /usr/bin/newrelic-infra
+              ignoreErrors: false
+              command: !Sub |
+                #!/bin/bash -xe
+
+                /usr/bin/newrelic-infra --version
+
+                /opt/aws/bin/cfn-signal -e $? \
+                  --stack ${AWS::StackName} \
+                  --region ${AWS::Region} \
+                  --reason "NewRelicAgent_version: $(/usr/bin/newrelic-infra --version) -- exit code: $?" \
+                  --data "NewRelicAgent_version: $(/usr/bin/newrelic-infra --version) -- exit code: $?" \
+                  '${InstallNewRelicAgentHandle}'
+
+                /usr/bin/newrelic-infra --version >> /tmp/test.txt
 
         AwsCli:
           packages:
@@ -149,7 +178,7 @@ Resources:
                   --stack ${AWS::StackName} \
                   --region ${AWS::Region} \
                   --reason "awsCli_version: $(aws --version) -- exit code: $?" \
-                  --data "awsCli_version: $(aws --version)" \
+                  --data "awsCli_version: $(aws --version) -- exit code: $?" \
                   '${InstallAwsCliHandle}'
 
                 aws --version >> /tmp/test.txt
@@ -211,6 +240,7 @@ Resources:
                     --stack ${AWS::StackName} \
                     --region ${AWS::Region} \
                     --data "ipv4_hostname: ${!AWS_HOSTNAME}" \
+                    --reason "ipv4_hostname: ${!AWS_HOSTNAME}" \
                     '${HostNameHandle}'
   SshKeyInstallHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
@@ -232,6 +262,16 @@ Resources:
       Handle: !Ref 'InstallAwsCliHandle'
       Timeout: 7200
 
+  InstallNewRelicAgentHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  InstallNewRelicAgentCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'SpotFleetRequest'
+    Properties:
+      Count: 1
+      Handle: !Ref 'InstallNewRelicAgentHandle'
+      Timeout: 7200
+
   HostNameHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
   HostNameCondition:
@@ -250,3 +290,7 @@ Outputs:
   AwsCliVersion:
     Description: Install Version of the AWS CLI
     Value: !GetAtt InstallAwsCliCondition.Data
+
+  NewRelicAgentVersion:
+    Description: Version of the New Relic Agent Installed
+    Value: !GetAtt InstallNewRelicAgentCondition.Data
