@@ -1,6 +1,15 @@
 # EC2
 
-## SpotInstanceTest
+## Security Groups
+
+Security groups are deployed on an already created VPC.  Two Security Group stacks exist:
+
+- Galactica-SG: Deploys an ingress-only security group to allow traffic from a specific IP address
+- SecurityGroup-Deploy: Deploys instance-level security groups, creating rules for specific ports such as HTTP/HTTPS, email ports, and others.
+
+## Instance Stacks
+
+### SpotInstanceTest
 
 [Spot Instances](https://aws) are great for testing cloud init scripts along with other tasks that can be interrupted.  Using this Cloudformation Template, I am able to deploy my normal `husker` EC2 instance.
 
