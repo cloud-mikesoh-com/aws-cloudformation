@@ -55,6 +55,11 @@ Mappings:
     t3a.medium: 
       SpotPrice: '0.015'
 
+Conditions:
+  InstallDockerCe: !Equals
+    - !Ref ConfigSet
+    - 'Docker'
+
 Resources:
   SpotFleetRequest:
     Type: 'AWS::EC2::SpotFleet'
@@ -65,8 +70,8 @@ Resources:
             - 'SshKeys' 
             - 'AwsCli'
             - 'NewRelic'
-            - ConfigSet: 'DockerConfig'
-          DockerConfig:
+          Docker:
+            - ConfigSet: default
             - 'Docker'
 
         SshKeys:
@@ -179,7 +184,7 @@ Resources:
 
         Docker:
           services:
-            DockerCeServices:
+            DockerCeService:
               enabled: true
               ensureRunning: true
               commands:
@@ -315,6 +320,7 @@ Resources:
   InstallDockerCeCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
     DependsOn: 'SpotFleetRequest'
+    Condition: InstallDockerCe
     Properties:
       Count: 1
       Handle: !Ref 'InstallDockerCeHandle'
@@ -345,4 +351,5 @@ Outputs:
 
   DockerCeVersion:
     Description: Version of the New Relic Agent Installed
+    Condition: InstallDockerCe
     Value: !GetAtt InstallDockerCeCondition.Data
