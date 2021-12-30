@@ -26,7 +26,7 @@ Parameters:
     Type: String
     Description: Expiration for Spot Request
     Default: '2030-12-31T23:59:59Z'
-  ConfigSets:
+  ConfigSet:
     Type: String
     Description: What config sets to run
     Default: default
@@ -273,7 +273,7 @@ Resources:
                     --stack ${AWS::StackName} \
                     --region ${AWS::Region} \
                     --resource "SpotFleetRequest" \
-                    --configsets ${ConfigSets}
+                    --configsets ${ConfigSet}
 
                   export AWS_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
                   echo Sending signal: $?
