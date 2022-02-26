@@ -1,4 +1,4 @@
-Description: Access Control List for Caprica
+Description: VPC, Subnet, NaCl declaration for Caprica
 Parameters:
   deployDate:
     Type: String
@@ -79,6 +79,24 @@ Resources:
       Tags:
       - Key: Name
         Value: NewCaprica-F
+
+  CapricaFlowLogs:
+    Type: 'AWS::EC2::FlowLog'
+    Properties:
+      ResourceId: !Ref 'CreateCapricaVpc'
+      ResourceType: VPC
+      TrafficType: ALL
+      MaxAggregationInterval: 600
+      LogGroupName: vpcLogs
+      LogDestinationType: cloud-watch-logs
+      DeliverLogsPermissionArn: 'arn:aws:iam::426869176820:role/flowlogsRole'
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: Name 
+          Value: 'Caprica-FlowLog'
 
   CreateNaCl:
     Type: 'AWS::EC2::NetworkAcl'
