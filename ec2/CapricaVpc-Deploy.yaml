@@ -32,6 +32,15 @@ Resources:
       AmazonProvidedIpv6CidrBlock: true
       VpcId: !Ref 'CreateCapricaVpc'
 
+  CapricaInternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  CapricaInternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref 'CapricaInternetGateway'
+      VpcId: !Ref 'CreateCapricaVpc'
+
   CapricaSubnetA:
     Type: AWS::EC2::Subnet
     DependsOn: 'CapricaIPv6CidrBlock'
