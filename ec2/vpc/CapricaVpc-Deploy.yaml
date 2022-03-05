@@ -240,6 +240,16 @@ Resources:
       RuleAction: deny
       CidrBlock: '31.210.20.245/32'
 
+  NaClRule111:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'CreateNaCl'
+      RuleNumber: 111
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '109.237.103.0/24'
+
+
   NaClRule500:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
