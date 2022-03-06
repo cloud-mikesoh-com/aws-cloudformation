@@ -118,15 +118,6 @@ Resources:
                 - InstallNewRelicAgent
 
           commands:
-            CopyNewRelicLicense:
-              command: |
-                #!/bin/bash -xe
-
-                echo 'About to copy NewRelic license from s3 bucket' >> /tmp/test.txt
-                aws s3 cp s3://mikesoh.com-configuration/newrelic-infra.yml /etc/
-
-                ls -l /etc/newrelic-infra.yml >> /tmp/test.txt
-
             InstallNewRelicAgent:
               files:
                 /etc/newrelic-infra.yml:
@@ -134,7 +125,6 @@ Resources:
                   mode: '000644'
                   owner: root
                   group: root
-              ignoreErrors: false
               command: |
                 #!/bin/bash -xe
                 echo "standard:NewRelicAgent" >> /tmp/test.txt
