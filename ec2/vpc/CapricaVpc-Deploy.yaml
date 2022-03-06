@@ -8,6 +8,13 @@ Parameters:
     Type: String
     Description: Git commit SHA
     Default: nocommit
+  galacticaIp:
+    Type: String
+    Description: IP4 address for galactica (or whatever IP address you want to allow)
+    Default: 127.0.0.1
+    MinLength: 9
+    MaxLength: 15
+    AllowedPattern: ^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$
 
 Resources:
   CreateCapricaVpc:
@@ -106,6 +113,22 @@ Resources:
           Value: !Ref 'deployDate'
         - Key: Name 
           Value: 'Caprica-FlowLog'
+
+  galacticaSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DeletionPolicy: Retain
+    Properties:
+      GroupDescription: Allow all traffic from galactica
+      GroupName: !Join ['-', [ !Ref 'AWS::StackName', 'galactica All Traffic [managed]' ]]
+      VpcId: !Ref 'CreateCapricaVpc'
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: !Join ['', [!Ref 'galacticaIp', '/32'] ]
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
 
   CreateNaCl:
     Type: 'AWS::EC2::NetworkAcl'
@@ -292,3 +315,8 @@ Outputs:
     Value: !Ref 'CreateCapricaVpc'
     Export: 
       Name: !Join [':', [ !Ref 'AWS::StackName', 'CreateCapricaVpc' ]]
+
+  galacticaSGId:
+    Value: !GetAtt galacticaSG.GroupId
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'galacticaSG' ]]
