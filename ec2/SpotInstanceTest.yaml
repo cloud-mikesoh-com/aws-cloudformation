@@ -12,10 +12,11 @@ Parameters:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
     Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
-  SubnetId:
+  Vpc:
     Description: The VPC that the EC2 instance should deploy into
-    Type: string
+    Type: String
     Default: Caprica
+    AllowedValues: ['Caprica', 'NewCaprica']
   InstanceType:
     Description: EC2 Instance Type.  Default is t3a.small
     Type: String
@@ -62,21 +63,19 @@ Mappings:
       SpotPrice: '0.015'
     t3a.medium: 
       SpotPrice: '0.015'
-  VpcSubnets:
+  VpcSubnet:
     Caprica:
-      subnets: ["subnet-4615b26d", "subnet-39044603"]
+      subnet: "subnet-39044603"
     NewCaprica:
-      subnets: ["subnet-0a5dd1b1751673b6d", subnet-0973116fea1eb0745"]
-  GalacticaSg:
-    Caprica:
-      sgId: foo
-    NewCaprica:
-      SgId: bar
+      subnet: "subnet-0803af3bfa87ee337"
 
 Conditions:
   InstallDockerCe: !Equals
     - !Ref ConfigSet
     - 'Docker'
+  GalacticaSg: !Equals
+    - !Ref Vpc
+    - 'Caprica'
 
 Resources:
   SpotFleetRequest:
@@ -257,9 +256,9 @@ Resources:
                     Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
                   - Key: deployDate
                     Value: !Ref 'deployDate'
-            SubnetId: !Ref 'SubnetId'
+            SubnetId: !FindInMap [VpcSubnet, !Ref 'Vpc', 'subnet']
             SecurityGroups:
-              - GroupId: !ImportValue 'Galactica-SG-Deploy:galacticaSG'
+              - GroupId: !If [ GalacticaSg, !ImportValue Galactica-SG-Deploy:galacticaSG, !ImportValue CapricaVpc-Deploy:galacticaSG ]
             KeyName: !Ref KeyName
             BlockDeviceMappings:
               - DeviceName: '/dev/sda1'
