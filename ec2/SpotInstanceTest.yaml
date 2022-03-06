@@ -30,6 +30,10 @@ Parameters:
     Type: String
     Description: What config sets to run
     Default: default
+  NewRelicInfraKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: New Relic Infrastructure Key for New Relic
+    Default: '/us-east-1/new-relic/infrastructure'
 
 Mappings:
   RegionArchAMI:
@@ -111,7 +115,6 @@ Resources:
               enabled: true
               ensureRunning: true
               commands:
-                - CopyNewRelicLicense
                 - InstallNewRelicAgent
 
           commands:
@@ -125,7 +128,12 @@ Resources:
                 ls -l /etc/newrelic-infra.yml >> /tmp/test.txt
 
             InstallNewRelicAgent:
-              test: test -e /etc/newrelic-infra.yml
+              files:
+                /etc/newrelic-infra.yml:
+                  content: !Join [" ", ["license_key:", !Ref NewRelicInfraKey] ]
+                  mode: '000644'
+                  owner: root
+                  group: root
               ignoreErrors: false
               command: |
                 #!/bin/bash -xe
