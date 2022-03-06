@@ -134,144 +134,134 @@ Resources:
         - Key: deployDate
           Value: !Ref 'deployDate'
 
-  CreateNaCl:
-    Type: 'AWS::EC2::NetworkAcl'
-    Properties:
-      VpcId: !Ref 'CreateCapricaVpc'
-      Tags:
-        - Key: managedBy
-          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
-        - Key: deployDate
-          Value: !Ref 'deployDate'
-
   SubnetANaClAssociation:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
       SubnetId: !Ref 'CapricaSubnetA'
   
   SubnetBNaClAssociation:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
       SubnetId: !Ref 'CapricaSubnetB'
 
   SubnetENaClAssociation:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
       SubnetId: !Ref 'CapricaSubnetC'
   
   SubnetFNaClAssociation:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
       SubnetId: !Ref 'CapricaSubnetD'
 
-  NaClRule100:
+  NaClRule200:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 100
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 200
       Protocol: -1
       RuleAction: deny
       CidrBlock: '45.142.120.0/24'
 
-  NaClRule101:
+  NaClRule201:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 101
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 201
       Protocol: -1
       RuleAction: deny
       CidrBlock: '212.70.149.0/24'
 
-  NaClRule102:
+  NaClRule202:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 102
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 202
       Protocol: -1
       RuleAction: deny
       CidrBlock: '141.98.80.0/24'
 
-  NaClRule103:
+  NaClRule203:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 103
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 203
       Protocol: -1
       RuleAction: deny
       CidrBlock: '141.98.10.0/24'
 
-  NaClRule104:
+  NaClRule204:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 104
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 204
       Protocol: -1
       RuleAction: deny
       CidrBlock: '5.188.206.204/32'
 
-  NaClRule105:
+  NaClRule205:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 105
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 205
       Protocol: -1
       RuleAction: deny
       CidrBlock: '193.169.254.0/24'
 
-  NaClRule106:
+  NaClRule206:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 106
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 206
       Protocol: -1
       RuleAction: deny
       CidrBlock: '185.234.219.0/24'
 
-  NaClRule107:
+  NaClRule207:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 107
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 207
       Protocol: -1
       RuleAction: deny
       CidrBlock: '103.253.42.0/24'
 
-  NaClRule108:
+  NaClRule208:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 108
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 208
       Protocol: -1
       RuleAction: deny
       CidrBlock: '194.61.53.0/24'
 
-  NaClRule109:
+  NaClRule209:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 109
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 209
       Protocol: -1
       RuleAction: deny
       CidrBlock: '87.246.7.246/32'
 
-  NaClRule110:
+  NaClRule210:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 110
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 210
       Protocol: -1
       RuleAction: deny
       CidrBlock: '31.210.20.245/32'
 
-  NaClRule111:
+  NaClRule211:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      RuleNumber: 111
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 211
       Protocol: -1
       RuleAction: deny
       CidrBlock: '109.237.103.0/24'
@@ -279,7 +269,7 @@ Resources:
   NaClRule500:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
       RuleNumber: 500
       Protocol: -1
       RuleAction: allow
@@ -288,28 +278,8 @@ Resources:
   NaClRule501:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
       RuleNumber: 501
-      Protocol: -1
-      RuleAction: allow
-      Ipv6CidrBlock: '::/0'
-
-  NaClEgressRule100:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      Egress: true
-      RuleNumber: 100
-      Protocol: -1
-      RuleAction: allow
-      CidrBlock: '0.0.0.0/0'
-
-  NaClEgressRule101:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !Ref 'CreateNaCl'
-      Egress: true
-      RuleNumber: 101
       Protocol: -1
       RuleAction: allow
       Ipv6CidrBlock: '::/0'
