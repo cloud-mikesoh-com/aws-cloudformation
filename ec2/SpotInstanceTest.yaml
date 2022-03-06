@@ -65,9 +65,9 @@ Mappings:
       SpotPrice: '0.015'
   VpcSubnet:
     Caprica:
-      subnet: "subnet-39044603"
+      subnet: "subnet-4615b26d"
     NewCaprica:
-      subnet: "subnet-0803af3bfa87ee337"
+      subnet: "subnet-081873f56bc786a01"
 
 Conditions:
   InstallDockerCe: !Equals
