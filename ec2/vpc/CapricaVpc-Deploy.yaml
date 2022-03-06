@@ -289,6 +289,6 @@ Resources:
 
 Outputs:
   CapricaVpcId:
-    Value: !Ref CreateCapricaVpc
+    Value: !Ref 'CreateCapricaVpc'
     Export: 
       Name: !Join [':', [ !Ref 'AWS::StackName', 'CreateCapricaVpc' ]]
