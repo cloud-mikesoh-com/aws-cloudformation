@@ -74,31 +74,31 @@ Resources:
       - Key: Name
         Value: NewCaprica-B
 
-  CapricaSubnetE:
+  CapricaSubnetC:
     Type: AWS::EC2::Subnet
     DependsOn: 'CapricaIPv6CidrBlock'
     Properties:
       VpcId: !Ref 'CreateCapricaVpc'
       CidrBlock: !Select [ 2, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
       Ipv6CidrBlock: !Select [ 2, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
-      AvailabilityZone: 'us-east-1e'
+      AvailabilityZone: 'us-east-1c'
       MapPublicIpOnLaunch: true
       Tags:
       - Key: Name
-        Value: NewCaprica-E
+        Value: NewCaprica-C
 
-  CapricaSubnetF:
+  CapricaSubnetD:
     Type: AWS::EC2::Subnet
     DependsOn: 'CapricaIPv6CidrBlock'
     Properties:
       VpcId: !Ref 'CreateCapricaVpc'
       CidrBlock: !Select [ 3, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
       Ipv6CidrBlock: !Select [ 3, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
-      AvailabilityZone: 'us-east-1f'
+      AvailabilityZone: 'us-east-1d'
       MapPublicIpOnLaunch: true
       Tags:
       - Key: Name
-        Value: NewCaprica-F
+        Value: NewCaprica-D
 
   CapricaFlowLogs:
     Type: 'AWS::EC2::FlowLog'
@@ -160,13 +160,13 @@ Resources:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
       NetworkAclId: !Ref 'CreateNaCl'
-      SubnetId: !Ref 'CapricaSubnetE'
+      SubnetId: !Ref 'CapricaSubnetC'
   
   SubnetFNaClAssociation:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
       NetworkAclId: !Ref 'CreateNaCl'
-      SubnetId: !Ref 'CapricaSubnetF'
+      SubnetId: !Ref 'CapricaSubnetD'
 
   NaClRule100:
     Type: 'AWS::EC2::NetworkAclEntry'
