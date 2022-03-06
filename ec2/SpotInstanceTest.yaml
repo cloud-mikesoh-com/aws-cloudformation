@@ -67,7 +67,7 @@ Mappings:
     Caprica:
       subnet: "subnet-4615b26d"
     NewCaprica:
-      subnet: "subnet-081873f56bc786a01"
+      subnet: "subnet-063ca2bb1a1d682a9"
 
 Conditions:
   InstallDockerCe: !Equals
@@ -106,11 +106,11 @@ Resources:
               command: !Sub |
                   #!/bin/bash -xe
 
-                  echo "Sending signal for SshKeyInstall" >> /tmp/test.txt
+                  echo "Sending signal for SshKeyInstall" >> /var/log/caprica-init.log
 
                   FILESIZE=$(stat -c%s "~ubuntu/.ssh/authorized_keys")
 
-                  echo "Checking filesize of authorized_keys" >> /tmp/test.txt
+                  echo "Checking filesize of authorized_keys" >> /var/log/caprica-init.log
                   test -e ${!FILESIZE} > 150
 
                   /opt/aws/bin/cfn-signal -e $? \
@@ -120,7 +120,7 @@ Resources:
                     --data "ssh authorized_keys size: ${!FILESIZE} -- exit code: $?" \
                     '${SshKeyInstallHandle}'
 
-                  echo "Done" >> /tmp/test.txt
+                  echo "Done" >> /var/log/caprica-init.log
 
         NewRelic: 
           services:
@@ -140,8 +140,8 @@ Resources:
                   group: root
               command: |
                 #!/bin/bash -xe
-                echo "standard:NewRelicAgent" >> /tmp/test.txt
-                cat /etc/newrelic-infra.yml >> /tmp/test.txt
+                echo "standard:NewRelicAgent" >> /var/log/caprica-init.log
+                cat /etc/newrelic-infra.yml >> /var/log/caprica-init.log
                 
                 curl -s 'https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg' | sudo apt-key add -
                 printf 'deb https://download.newrelic.com/infrastructure_agent/linux/apt focal main' | sudo tee -a /etc/apt/sources.list.d/newrelic-infra.list
@@ -162,7 +162,7 @@ Resources:
                   --data "NewRelicAgent_version: $(/usr/bin/newrelic-infra --version) -- exit code: $?" \
                   '${InstallNewRelicAgentHandle}'
 
-                /usr/bin/newrelic-infra --version >> /tmp/test.txt
+                /usr/bin/newrelic-infra --version >> /var/log/caprica-init.log
 
         AwsCli:
           packages:
@@ -176,8 +176,8 @@ Resources:
                 #!/bin/bash -xe
                 cd /tmp
 
-                echo 'starting AWS CLI installation' >> /tmp/test.txt
-                whoami >> /tmp/test.txt
+                echo 'starting AWS CLI installation' >> /var/log/caprica-init.log
+                whoami >> /var/log/caprica-init.log
 
                 curl -Ls 'https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/main/packages/01-awscli.sh' -o awscli.sh
                 bash awscli.sh
@@ -191,7 +191,7 @@ Resources:
                   --data "awsCli_version: $(aws --version) -- exit code: $?" \
                   '${InstallAwsCliHandle}'
 
-                aws --version >> /tmp/test.txt
+                aws --version >> /var/log/caprica-init.log
 
         Docker:
           services:
@@ -208,7 +208,7 @@ Resources:
                 #!/bin/bash -xe
                 cd /tmp
 
-                echo 'Starting Docker-CE installation...' >> /tmp/test.txt
+                echo 'Starting Docker-CE installation...' >> /var/log/caprica-init.log
 
                 curl -Ls 'https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/main/packages/50-docker.sh' -o docker.sh
                 bash docker.sh
@@ -230,9 +230,9 @@ Resources:
                   --data "Docker_version: $(/usr/bin/docker --version) -- exit code: $?" \
                   '${InstallDockerCeHandle}'
 
-                /usr/bin/docker --version >> /tmp/test.txt
+                /usr/bin/docker --version >> /var/log/caprica-init.log
 
-                echo 'Docker install completed' >> /tmp/test.txt
+                echo 'Docker install completed' >> /var/log/caprica-init.log
 
     Properties:
       SpotFleetRequestConfigData:
