@@ -56,6 +56,7 @@ Resources:
       CidrBlock: !Select [ 0, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
       Ipv6CidrBlock: !Select [ 0, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
       AvailabilityZone: 'us-east-1a'
+      MapPublicIpOnLaunch: true
       Tags:
       - Key: Name
         Value: NewCaprica-A
@@ -68,6 +69,7 @@ Resources:
       CidrBlock: !Select [ 1, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
       Ipv6CidrBlock: !Select [ 1, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
       AvailabilityZone: 'us-east-1b'
+      MapPublicIpOnLaunch: true
       Tags:
       - Key: Name
         Value: NewCaprica-B
@@ -80,6 +82,7 @@ Resources:
       CidrBlock: !Select [ 2, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
       Ipv6CidrBlock: !Select [ 2, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
       AvailabilityZone: 'us-east-1e'
+      MapPublicIpOnLaunch: true
       Tags:
       - Key: Name
         Value: NewCaprica-E
@@ -92,6 +95,7 @@ Resources:
       CidrBlock: !Select [ 3, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
       Ipv6CidrBlock: !Select [ 3, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
       AvailabilityZone: 'us-east-1f'
+      MapPublicIpOnLaunch: true
       Tags:
       - Key: Name
         Value: NewCaprica-F
