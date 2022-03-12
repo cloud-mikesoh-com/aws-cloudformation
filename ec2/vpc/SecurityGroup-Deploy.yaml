@@ -8,13 +8,26 @@ Parameters:
     Type: String
     Description: Git commit SHA
     Default: nocommit
+  Vpc:
+    Description: The VPC that the EC2 instance should deploy into
+    Type: String
+    Default: Caprica
+    AllowedValues: ['Caprica', 'NewCaprica']
+
+Mappings:
+  VpcMap:
+    Caprica:
+      VpcId: "vpc-44d99a21"
+    NewCaprica:
+      VpcId: "vpc-0698cc002d93aa5dc"
 
 Resources:
   AllowPingSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allow ICMP Ping
-      GroupName: Allow Ping [managed]
+      GroupName: !Join ['-', [ !Ref 'Vpc', 'Allow Ping [managed]' ]]
+      VpcId: !FindInMap [VpcMap, !Ref 'Vpc', 'VpcId']
       SecurityGroupIngress:
         - IpProtocol: icmp
           FromPort: -1
@@ -30,7 +43,8 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Open Standard Web Ports
-      GroupName: Web Ports [managed]
+      GroupName: !Join ['-', [ !Ref 'Vpc', 'Web Ports [managed]' ]]
+      VpcId: !FindInMap [VpcMap, !Ref 'Vpc', 'VpcId']
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -50,7 +64,8 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allow Email Ports
-      GroupName: Email Ports [managed]
+      GroupName: !Join ['-', [ !Ref 'Vpc', 'Email Ports [managed]' ]]
+      VpcId: !FindInMap [VpcMap, !Ref 'Vpc', 'VpcId']
       SecurityGroupIngress:
         - Description: SMTPS
           IpProtocol: tcp
