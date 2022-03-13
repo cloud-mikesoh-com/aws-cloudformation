@@ -183,7 +183,7 @@ Resources:
       RuleNumber: 202
       Protocol: -1
       RuleAction: deny
-      CidrBlock: '141.98.80.0/24'
+      CidrBlock: '141.98.0.0/16'
 
   NaClRule203:
     Type: 'AWS::EC2::NetworkAclEntry'
@@ -192,7 +192,7 @@ Resources:
       RuleNumber: 203
       Protocol: -1
       RuleAction: deny
-      CidrBlock: '141.98.10.0/24'
+      CidrBlock: '49.7.20.0/24'
 
   NaClRule204:
     Type: 'AWS::EC2::NetworkAclEntry'
@@ -265,6 +265,15 @@ Resources:
       Protocol: -1
       RuleAction: deny
       CidrBlock: '109.237.103.0/24'
+
+  NaClRule212:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
+      RuleNumber: 212
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '212.193.30.0/24'
 
   NaClRule500:
     Type: 'AWS::EC2::NetworkAclEntry'
