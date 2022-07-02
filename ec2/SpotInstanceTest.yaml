@@ -22,11 +22,11 @@ Parameters:
     Type: String
     Default: t3a.small
     AllowedValues: ['t3.micro', 't3.small', 't3.medium', 't3a.micro', 't3a.small', 't3a.medium']
-  Architecture:
-    Description: 'Processor Architecture type.  Valid values: amd64, arm64.  Default amd64'
+  UbuntuVersion:
+    Description: 'Ubuntu Version Name.  Valid values: focal, jammy.  Default focal'
     Type: String
-    Default: amd64
-    AllowedValues: ['amd64', 'arm64']
+    Default: focal
+    AllowedValues: ['focal', 'jammy']
   NewRelicInfraKey:
     Type: AWS::SSM::Parameter::Value<String>
     Description: New Relic Infrastructure Key for New Relic
@@ -45,15 +45,19 @@ Parameters:
     Default: default
 
 Mappings:
-  RegionArchAMI:
+  RegionUbuntuVersionAMI:
     us-east-1:
-      amd64: ami-0c4f7023847b90238
+      focal: ami-0439517b5e436bdab
+      jammy: ami-0f65ab0fd913bc7be
     us-east-2:
-      amd64: ami-0eea504f45ef7a8f7
+      focal: ami-06270ef18c41050c6
+      jammy: ami-079b3f6abda6a6372
     us-west-1:
-      amd64: ami-0487b1fe60c1fd1a2
+      focal: ami-0b256f935d73b31de
+      jammy: ami-08daca4640726cc73
     us-west-2:
-      amd64: ami-0cb4e786f15603b0d
+      focal: ami-04c92c2862766d9ed
+      jammy: ami-0c21533018816e490
   MaxSpotPrice:
     t3.micro: 
       SpotPrice: '0.005'
@@ -290,7 +294,7 @@ Resources:
         LaunchSpecifications:
           - EbsOptimized: false
             InstanceType: !Ref 'InstanceType'
-            ImageId: !FindInMap [RegionArchAMI, !Ref 'AWS::Region', !Ref 'Architecture']
+            ImageId: !FindInMap [RegionUbuntuVersionAMI, !Ref 'AWS::Region', !Ref 'UbuntuVersion']
             IamInstanceProfile: 
               Arn: 'arn:aws:iam::426869176820:instance-profile/ec2-user-role'
             TagSpecifications:
