@@ -31,6 +31,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: New Relic Infrastructure Key for New Relic
     Default: '/us-east-1/new-relic/infrastructure'
+  DatadogApiKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Key for Datadog
+    Default: '/us-east-1/datadog'
   Expiry:
     Type: String
     Description: Expiration for Spot Request
@@ -43,13 +47,13 @@ Parameters:
 Mappings:
   RegionArchAMI:
     us-east-1:
-      amd64: ami-04505e74c0741db8d
+      amd64: ami-0c4f7023847b90238
     us-east-2:
-      amd64: ami-0fb653ca2d3203ac1
+      amd64: ami-0eea504f45ef7a8f7
     us-west-1:
-      amd64: ami-01f87c43e618bf8f0
+      amd64: ami-0487b1fe60c1fd1a2
     us-west-2:
-      amd64: ami-0892d3c7ee96c0bf7
+      amd64: ami-0cb4e786f15603b0d
   MaxSpotPrice:
     t3.micro: 
       SpotPrice: '0.005'
@@ -86,7 +90,7 @@ Resources:
           default:
             - 'SshKeys' 
             - 'AwsCli'
-            - 'NewRelic'
+            - 'Datadog'
           Docker:
             - ConfigSet: default
             - 'Docker'
@@ -121,6 +125,46 @@ Resources:
                     '${SshKeyInstallHandle}'
 
                   echo "Done" >> /var/log/caprica-init.log
+
+        Datadog: 
+          services:
+            DatadogService:
+              enabled: true
+              ensureRunning: true
+              commands:
+                - InstallDatadogAgent
+
+          commands:
+            InstallDatadogAgent:
+              env:
+                DD_API_KEY: !Sub "${DatadogApiKey}"
+              command: |
+                #!/bin/bash -xe
+                cd /tmp
+                echo "standard:DatadogAgent" >> /var/log/caprica-init.log
+                curl -Ls https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh -o install_datadog.sh
+                bash install_datadog.sh
+
+                sed -i 's/^# logs_enabled: false$/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
+                systemctl stop datadog-agent.service && systemctl start datadog-agent.service
+
+            SignalDatadogAgentCondition:
+              test: test -e /usr/bin/datadog-agent
+              ignoreErrors: false
+              command: !Sub |
+                #!/bin/bash -xe
+
+                /usr/bin/datadog-agent version
+
+                /opt/aws/bin/cfn-signal -e $? \
+                  --stack ${AWS::StackName} \
+                  --region ${AWS::Region} \
+                  --reason "DatadogAgent_version: $(/usr/bin/datadog-agent version) -- exit code: $?" \
+                  --data "DatadogAgent_version: $(/usr/bin/datadog-agent version) -- exit code: $?" \
+                  '${InstallMonitoringAgentHandle}'
+
+                /usr/bin/datadog-agent version >> /var/log/caprica-init.log
+
 
         NewRelic: 
           services:
@@ -160,7 +204,7 @@ Resources:
                   --region ${AWS::Region} \
                   --reason "NewRelicAgent_version: $(/usr/bin/newrelic-infra --version) -- exit code: $?" \
                   --data "NewRelicAgent_version: $(/usr/bin/newrelic-infra --version) -- exit code: $?" \
-                  '${InstallNewRelicAgentHandle}'
+                  '${InstallMonitoringAgentHandle}'
 
                 /usr/bin/newrelic-infra --version >> /var/log/caprica-init.log
 
@@ -316,14 +360,14 @@ Resources:
       Handle: !Ref 'InstallAwsCliHandle'
       Timeout: 600
 
-  InstallNewRelicAgentHandle: 
+  InstallMonitoringAgentHandle: 
     Type: 'AWS::CloudFormation::WaitConditionHandle'
-  InstallNewRelicAgentCondition:
+  InstallMonitoringAgentCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
     DependsOn: 'SpotFleetRequest'
     Properties:
       Count: 1
-      Handle: !Ref 'InstallNewRelicAgentHandle'
+      Handle: !Ref 'InstallMonitoringAgentHandle'
       Timeout: 600
 
   InstallDockerCeHandle: 
@@ -356,11 +400,11 @@ Outputs:
     Description: Install Version of the AWS CLI
     Value: !GetAtt InstallAwsCliCondition.Data
 
-  NewRelicAgentVersion:
-    Description: Version of the New Relic Agent Installed
-    Value: !GetAtt InstallNewRelicAgentCondition.Data
+  MonitorAgentVersion:
+    Description: Version of the Monitoring Agent Installed
+    Value: !GetAtt InstallMonitoringAgentCondition.Data
 
   DockerCeVersion:
-    Description: Version of the New Relic Agent Installed
+    Description: Version of the Docker Agent Installed
     Condition: InstallDockerCe
     Value: !GetAtt InstallDockerCeCondition.Data
