@@ -1,4 +1,4 @@
-Description: VPC, Subnet, NaCl declaration for Caprica
+Description: VPC, Subnet declarations for New Caprica
 Parameters:
   deployDate:
     Type: String
@@ -17,10 +17,10 @@ Parameters:
     AllowedPattern: ^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$
 
 Resources:
-  CreateCapricaVpc:
+  CreateNewCapricaVpc:
     Type: 'AWS::EC2::VPC'
     Properties:
-      CidrBlock: '192.168.253.0/24'
+      CidrBlock: '10.1.0.0/16'
       Tags:
         - Key: managedBy
           Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
@@ -33,77 +33,79 @@ Resources:
         - Key: PublicEgress
           Value: true
   
-  CapricaIPv6CidrBlock:
+  NewCapricaIPv6CidrBlock:
     Type: AWS::EC2::VPCCidrBlock
     Properties:
       AmazonProvidedIpv6CidrBlock: true
-      VpcId: !Ref 'CreateCapricaVpc'
+      VpcId: !Ref 'CreateNewCapricaVpc'
 
-  CapricaInternetGateway:
+  NewCapricaInternetGateway:
     Type: AWS::EC2::InternetGateway
 
-  CapricaInternetGatewayAttachment:
+  NewCapricaInternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties: 
-      InternetGatewayId: !Ref 'CapricaInternetGateway'
-      VpcId: !Ref 'CreateCapricaVpc'
+      InternetGatewayId: !Ref 'NewCapricaInternetGateway'
+      VpcId: !Ref 'CreateNewCapricaVpc'
 
-  CapricaSubnetA:
+  NewCapricaMikeSohDBs:
     Type: AWS::EC2::Subnet
-    DependsOn: 'CapricaIPv6CidrBlock'
     Properties:
-      VpcId: !Ref 'CreateCapricaVpc'
-      CidrBlock: !Select [ 0, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
-      Ipv6CidrBlock: !Select [ 0, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
-      AvailabilityZone: 'us-east-1a'
-      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'CreateNewCapricaVpc'
+      CidrBlock: "10.1.0.0/28"
+      AvailabilityZone: 'us-east-1d'
+      MapPublicIpOnLaunch: false
       Tags:
       - Key: Name
-        Value: NewCaprica-A
+        Value: NewCaprica-MikeSoh-Databases-NoPublicEgress
+      - Key: PublicEgress
+        Value: FALSE
 
-  CapricaSubnetB:
+  NewCapricaMikesohCompute:
     Type: AWS::EC2::Subnet
-    DependsOn: 'CapricaIPv6CidrBlock'
+    DependsOn: 'NewCapricaIPv6CidrBlock'
     Properties:
-      VpcId: !Ref 'CreateCapricaVpc'
-      CidrBlock: !Select [ 1, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
-      Ipv6CidrBlock: !Select [ 1, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
-      AvailabilityZone: 'us-east-1b'
-      MapPublicIpOnLaunch: true
-      Tags:
-      - Key: Name
-        Value: NewCaprica-B
-
-  CapricaSubnetC:
-    Type: AWS::EC2::Subnet
-    DependsOn: 'CapricaIPv6CidrBlock'
-    Properties:
-      VpcId: !Ref 'CreateCapricaVpc'
-      CidrBlock: !Select [ 2, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
-      Ipv6CidrBlock: !Select [ 2, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
-      AvailabilityZone: 'us-east-1c'
-      MapPublicIpOnLaunch: true
-      Tags:
-      - Key: Name
-        Value: NewCaprica-C
-
-  CapricaSubnetD:
-    Type: AWS::EC2::Subnet
-    DependsOn: 'CapricaIPv6CidrBlock'
-    Properties:
-      VpcId: !Ref 'CreateCapricaVpc'
-      CidrBlock: !Select [ 3, !Cidr [ !GetAtt 'CreateCapricaVpc.CidrBlock', 4, 6 ]]
-      Ipv6CidrBlock: !Select [ 3, !Cidr [ !Select [ 0, !GetAtt CreateCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
+      VpcId: !Ref 'CreateNewCapricaVpc'
+      CidrBlock: "10.1.21.0/26"
+      Ipv6CidrBlock: !Select [ 0, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks ], 4, 64 ]]
       AvailabilityZone: 'us-east-1d'
       MapPublicIpOnLaunch: true
       Tags:
       - Key: Name
-        Value: NewCaprica-D
+        Value: NewCaprica-MikeSoh-Compute
+      - Key: PublicEgress
+        Value: TRUE
 
-  CapricaFlowLogs:
+  NewCapricaGeneralComputeD:
+    Type: AWS::EC2::Subnet
+    DependsOn: 'NewCapricaIPv6CidrBlock'
+    Properties:
+      VpcId: !Ref 'CreateNewCapricaVpc'
+      CidrBlock: "10.1.100.0/24"
+      Ipv6CidrBlock: !Select [ 1, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
+      AvailabilityZone: 'us-east-1d'
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: NewCaprica-General-Compute-D
+
+  NewCapricaGeneralComputeB:
+    Type: AWS::EC2::Subnet
+    DependsOn: 'NewCapricaIPv6CidrBlock'
+    Properties:
+      VpcId: !Ref 'CreateNewCapricaVpc'
+      CidrBlock: "10.1.101.0/24"
+      Ipv6CidrBlock: !Select [ 2, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
+      AvailabilityZone: 'us-east-1b'
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: NewCaprica-General-Compute-B
+  
+  NewCapricaFlowLogs:
     Type: 'AWS::EC2::FlowLog'
     Properties:
-      ResourceId: !Ref 'CreateCapricaVpc'
+      ResourceId: !Ref 'CreateNewCapricaVpc'
       ResourceType: VPC
       TrafficType: ALL
       MaxAggregationInterval: 600
@@ -116,7 +118,13 @@ Resources:
         - Key: deployDate
           Value: !Ref 'deployDate'
         - Key: Name 
-          Value: 'Caprica-FlowLog'
+          Value: 'NewCaprica-FlowLog'
+
+  MikesohComputeNaClAssociation:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      NetworkAclId: !GetAtt 'CreateNewCapricaVpc.DefaultNetworkAcl'
+      SubnetId: !Ref 'NewCapricaMikesohCompute'
 
   galacticaSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -124,7 +132,7 @@ Resources:
     Properties:
       GroupDescription: Allow all traffic from galactica
       GroupName: !Join ['-', [ !Ref 'AWS::StackName', 'galactica All Traffic [managed]' ]]
-      VpcId: !Ref 'CreateCapricaVpc'
+      VpcId: !Ref 'CreateNewCapricaVpc'
       SecurityGroupIngress:
         - IpProtocol: -1
           CidrIp: !Join ['', [!Ref 'galacticaIp', '/32'] ]
@@ -134,170 +142,11 @@ Resources:
         - Key: deployDate
           Value: !Ref 'deployDate'
 
-  SubnetANaClAssociation:
-    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      SubnetId: !Ref 'CapricaSubnetA'
-  
-  SubnetBNaClAssociation:
-    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      SubnetId: !Ref 'CapricaSubnetB'
-
-  SubnetENaClAssociation:
-    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      SubnetId: !Ref 'CapricaSubnetC'
-  
-  SubnetFNaClAssociation:
-    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      SubnetId: !Ref 'CapricaSubnetD'
-
-  NaClRule200:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 200
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '45.142.120.0/24'
-
-  NaClRule201:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 201
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '212.70.149.0/24'
-
-  NaClRule202:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 202
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '141.98.0.0/16'
-
-  NaClRule203:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 203
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '49.7.20.0/24'
-
-  NaClRule204:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 204
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '5.188.206.204/32'
-
-  NaClRule205:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 205
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '193.169.254.0/24'
-
-  NaClRule206:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 206
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '185.234.219.0/24'
-
-  NaClRule207:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 207
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '103.253.42.0/24'
-
-  NaClRule208:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 208
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '194.61.53.0/24'
-
-  NaClRule209:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 209
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '87.246.7.246/32'
-
-  NaClRule210:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 210
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '31.210.20.245/32'
-
-  NaClRule211:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 211
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '109.237.103.0/24'
-
-  NaClRule212:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 212
-      Protocol: -1
-      RuleAction: deny
-      CidrBlock: '212.193.30.0/24'
-
-  NaClRule500:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 500
-      Protocol: -1
-      RuleAction: allow
-      CidrBlock: '0.0.0.0/0'
-
-  NaClRule501:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateCapricaVpc.DefaultNetworkAcl'
-      RuleNumber: 501
-      Protocol: -1
-      RuleAction: allow
-      Ipv6CidrBlock: '::/0'
-
 Outputs:
-  CapricaVpcId:
-    Value: !Ref 'CreateCapricaVpc'
+  NewCapricaVpcId:
+    Value: !Ref 'CreateNewCapricaVpc'
     Export: 
-      Name: !Join [':', [ !Ref 'AWS::StackName', 'CreateCapricaVpc' ]]
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'CreateNewCapricaVpc' ]]
 
   galacticaSGId:
     Value: !GetAtt galacticaSG.GroupId
