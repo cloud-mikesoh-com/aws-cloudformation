@@ -8,6 +8,10 @@ Parameters:
     Type: String
     Description: Git commit SHA
     Default: nocommit
+  DatabasePassword:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Default Password for Database
+    Default: '/us-east-1/rds/AdminPassword'
 
 Resources:
   NewCapricaMikeSohDBsAzD:
@@ -16,12 +20,17 @@ Resources:
       VpcId: !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc'
       CidrBlock: "10.1.0.0/28"
       AvailabilityZone: 'us-east-1d'
-      MapPublicIpOnLaunch: false
+      MapPublicIpOnLaunch: true
       Tags:
-      - Key: Name
-        Value: NewCaprica-MikeSoh-Az1D-Databases-NoPublicEgress
-      - Key: PublicEgress
-        Value: FALSE
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: Name
+          Value: NewCaprica-MikeSoh-Az1D-Databases-NoPublicEgress
+        - Key: PublicEgress
+          Value: FALSE
+
 
   NewCapricaMikeSohDBsAzB:
     Type: AWS::EC2::Subnet
@@ -31,10 +40,14 @@ Resources:
       AvailabilityZone: 'us-east-1b'
       MapPublicIpOnLaunch: false
       Tags:
-      - Key: Name
-        Value: NewCaprica-MikeSoh-Az1B-Databases-NoPublicEgress
-      - Key: PublicEgress
-        Value: FALSE
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: Name
+          Value: NewCaprica-MikeSoh-Az1B-Databases-NoPublicEgress
+        - Key: PublicEgress
+          Value: FALSE
 
   NewCapricaMikesohCompute:
     Type: AWS::EC2::Subnet
@@ -46,10 +59,14 @@ Resources:
       AvailabilityZone: 'us-east-1d'
       MapPublicIpOnLaunch: true
       Tags:
-      - Key: Name
-        Value: NewCaprica-MikeSoh-Compute
-      - Key: PublicEgress
-        Value: TRUE
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: Name
+          Value: NewCaprica-MikeSoh-Compute
+        - Key: PublicEgress
+          Value: TRUE
 
   MikesohComputeNaClAssociation:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
@@ -65,6 +82,69 @@ Resources:
       SubnetIds:
         - !Ref NewCapricaMikeSohDBsAzD
         - !Ref NewCapricaMikeSohDBsAzB
+  
+  MikesohStackSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security Group for Mikesoh App
+      GroupName: !Join ['-', [ !Ref 'AWS::StackName', 'MikesohStack [managed]' ]]
+      VpcId: !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc'
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+  
+  MikesohStackSGSelfIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    DependsOn: 'MikesohStackSG'
+    Properties:
+      Description: Allow all traffic from within the Security Group
+      GroupId: !Ref 'MikesohStackSG'
+      SourceSecurityGroupId: !Ref 'MikesohStackSG'
+      IpProtocol: -1
+  
+  MikesohStackSGSelfEgress:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    DependsOn: 'MikesohStackSG'
+    Properties:
+      Description: Allow all traffic from within the Security Group
+      GroupId: !Ref 'MikesohStackSG'
+      DestinationSecurityGroupId: !Ref 'MikesohStackSG'
+      IpProtocol: -1  
+  
+
+
+  # MikesohStackDatabase:
+  #   Type: 'AWS::RDS::DBInstance'
+  #   Properties:
+  #     Engine: mariadb
+  #     EngineVersion: '10.6.8'
+  #     AllowMajorVersionUpgrade: false
+  #     AutoMinorVersionUpgrade: true
+  #     MasterUsername: 'admin'
+  #     MasterUserPassword: !Ref 'DatabasePassword'
+
+  #     DBInstanceIdentifier: 'mikesoh-com-db-production'
+  #     DBInstanceClass: 'db.t3.micro'
+  #     AllocatedStorage: 20
+  #     MaxAllocatedStorage: 100
+  #     StorageType: gp2
+      
+  #     AvailabilityZone: 'us-east-1d'
+  #     BackupRetentionPeriod: 7
+  #     DBSubnetGroupName: !Ref MikesohDBSubnetGroup
+  #     PubliclyAccessible: true
+  #     VPCSecurityGroups:
+  #       - !Ref 'MikesohStackSG'
+  #       - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
+  #     Tags:
+  #       - Key: managedBy
+  #         Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+  #       - Key: deployDate
+  #         Value: !Ref 'deployDate'
+  #       - Key: environment
+  #         Value: "testing"
 
 
 Outputs:
@@ -87,3 +167,8 @@ Outputs:
     Value: !Ref 'NewCapricaMikesohCompute'
     Export: 
       Name: !Join [':', [ !Ref 'AWS::StackName', 'NewCapricaMikesohCompute' ]]
+
+  ExportMikesohAppSG:
+    Value: !Ref MikesohStackSG
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'MikesohStackSG' ]]
