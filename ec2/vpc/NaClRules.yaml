@@ -1,0 +1,149 @@
+Description: NaCl Declarations for a VPC
+Parameters:
+  deployDate:
+    Type: String
+    Description: Date for the deployment
+    Default: "1970-01-01 00:00:00"
+  commitSha: 
+    Type: String
+    Description: Git commit SHA
+    Default: nocommit
+  TargetAcl:
+    Type: String
+    Description: ID of the target Access Control List
+
+Resources:
+  NaClRule200:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 200
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '45.142.120.0/24'
+
+  NaClRule201:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 201
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '212.70.149.0/24'
+
+  NaClRule202:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 202
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '141.98.0.0/16'
+
+  NaClRule203:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 203
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '49.7.20.0/24'
+
+  NaClRule204:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 204
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '5.188.206.204/32'
+
+  NaClRule205:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 205
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '193.169.254.0/24'
+
+  NaClRule206:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 206
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '185.234.219.0/24'
+
+  NaClRule207:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 207
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '103.253.42.0/24'
+
+  NaClRule208:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 208
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '194.61.53.0/24'
+
+  NaClRule209:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 209
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '87.246.7.246/32'
+
+  NaClRule210:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 210
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '31.210.20.245/32'
+
+  NaClRule211:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 211
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '109.237.103.0/24'
+
+  NaClRule212:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 212
+      Protocol: -1
+      RuleAction: deny
+      CidrBlock: '212.193.30.0/24'
+
+  NaClRule500:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 500
+      Protocol: -1
+      RuleAction: allow
+      CidrBlock: '0.0.0.0/0'
+
+  NaClRule501:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref 'TargetAcl'
+      RuleNumber: 501
+      Protocol: -1
+      RuleAction: allow
+      Ipv6CidrBlock: '::/0'
