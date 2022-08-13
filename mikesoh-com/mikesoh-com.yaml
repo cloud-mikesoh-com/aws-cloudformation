@@ -10,7 +10,7 @@ Parameters:
     Default: nocommit
 
 Resources:
-  NewCapricaMikeSohDBs:
+  NewCapricaMikeSohDBsAzD:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc'
@@ -19,7 +19,20 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
       - Key: Name
-        Value: NewCaprica-MikeSoh-Databases-NoPublicEgress
+        Value: NewCaprica-MikeSoh-Az1D-Databases-NoPublicEgress
+      - Key: PublicEgress
+        Value: FALSE
+
+  NewCapricaMikeSohDBsAzB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc'
+      CidrBlock: "10.1.0.16/28"
+      AvailabilityZone: 'us-east-1b'
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: NewCaprica-MikeSoh-Az1B-Databases-NoPublicEgress
       - Key: PublicEgress
         Value: FALSE
 
@@ -44,13 +57,32 @@ Resources:
       NetworkAclId: !ImportValue NewCapricaVpc-Deploy:NewCapricaDefaultAcl
       SubnetId: !Ref 'NewCapricaMikesohCompute'
 
+  MikesohDBSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupName: Mikesoh-com-SubnetGroup
+      DBSubnetGroupDescription: Mikesoh.com Subnet Group
+      SubnetIds:
+        - !Ref NewCapricaMikeSohDBsAzD
+        - !Ref NewCapricaMikeSohDBsAzB
+
 
 Outputs:
-  MikeSohDBsSubnet:
-    Value: !Ref 'NewCapricaMikeSohDBs'
+  MikeSohDBsAzDSubnet:
+    Value: !Ref 'NewCapricaMikeSohDBsAzD'
     Export: 
-      Name: !Join [':', [ !Ref 'AWS::StackName', 'NewCapricaMikeSohDBs' ]]
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'NewCapricaMikeSohDBsAzD' ]]
   
+  MikeSohDBsAzBSubnet:
+    Value: !Ref 'NewCapricaMikeSohDBsAzB'
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'NewCapricaMikeSohDBsAzB' ]]
+  
+  ExportMikesohDBSubnetGroup:
+    Value: !Ref 'MikesohDBSubnetGroup'
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'MikesohDBSubnetGroup' ]]
+
   MikeSohComputeSubnet:
     Value: !Ref 'NewCapricaMikesohCompute'
     Export: 
