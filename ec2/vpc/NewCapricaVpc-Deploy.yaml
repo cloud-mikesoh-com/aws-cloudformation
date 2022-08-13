@@ -21,6 +21,8 @@ Resources:
     Type: 'AWS::EC2::VPC'
     Properties:
       CidrBlock: '10.1.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
       Tags:
         - Key: managedBy
           Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
@@ -48,41 +50,13 @@ Resources:
       InternetGatewayId: !Ref 'NewCapricaInternetGateway'
       VpcId: !Ref 'CreateNewCapricaVpc'
 
-  NewCapricaMikeSohDBs:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref 'CreateNewCapricaVpc'
-      CidrBlock: "10.1.0.0/28"
-      AvailabilityZone: 'us-east-1d'
-      MapPublicIpOnLaunch: false
-      Tags:
-      - Key: Name
-        Value: NewCaprica-MikeSoh-Databases-NoPublicEgress
-      - Key: PublicEgress
-        Value: FALSE
-
-  NewCapricaMikesohCompute:
-    Type: AWS::EC2::Subnet
-    DependsOn: 'NewCapricaIpv6CidrBlock'
-    Properties:
-      VpcId: !Ref 'CreateNewCapricaVpc'
-      CidrBlock: "10.1.21.0/26"
-      Ipv6CidrBlock: !Select [ 0, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks ], 4, 64 ]]
-      AvailabilityZone: 'us-east-1d'
-      MapPublicIpOnLaunch: true
-      Tags:
-      - Key: Name
-        Value: NewCaprica-MikeSoh-Compute
-      - Key: PublicEgress
-        Value: TRUE
-
   NewCapricaGeneralComputeD:
     Type: AWS::EC2::Subnet
     DependsOn: 'NewCapricaIpv6CidrBlock'
     Properties:
       VpcId: !Ref 'CreateNewCapricaVpc'
       CidrBlock: "10.1.100.0/24"
-      Ipv6CidrBlock: !Select [ 1, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
+      Ipv6CidrBlock: !Select [ 0, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks], 256, 64 ]]
       AvailabilityZone: 'us-east-1d'
       MapPublicIpOnLaunch: false
       Tags:
@@ -95,7 +69,7 @@ Resources:
     Properties:
       VpcId: !Ref 'CreateNewCapricaVpc'
       CidrBlock: "10.1.101.0/24"
-      Ipv6CidrBlock: !Select [ 2, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks], 4, 64 ]]
+      Ipv6CidrBlock: !Select [ 1, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks], 256, 64 ]]
       AvailabilityZone: 'us-east-1b'
       MapPublicIpOnLaunch: false
       Tags:
@@ -120,12 +94,6 @@ Resources:
         - Key: Name 
           Value: 'NewCaprica-FlowLog'
 
-  MikesohComputeNaClAssociation:
-    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
-    Properties:
-      NetworkAclId: !GetAtt 'CreateNewCapricaVpc.DefaultNetworkAcl'
-      SubnetId: !Ref 'NewCapricaMikesohCompute'
-
   galacticaSG:
     Type: 'AWS::EC2::SecurityGroup'
     DeletionPolicy: Retain
@@ -148,6 +116,16 @@ Outputs:
     Export: 
       Name: !Join [':', [ !Ref 'AWS::StackName', 'CreateNewCapricaVpc' ]]
 
+  NewCapricaIpv6CidrBlock:
+    Value: !Select [ 0, !GetAtt 'CreateNewCapricaVpc.Ipv6CidrBlocks' ]
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'NewCapricaIpv6CidrBlock' ]]
+
+  NewCapricaDefaultAcl:
+    Value: !GetAtt 'CreateNewCapricaVpc.DefaultNetworkAcl'
+    Export:
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'NewCapricaDefaultAcl' ]]
+  
   galacticaSGId:
     Value: !GetAtt galacticaSG.GroupId
     Export: 

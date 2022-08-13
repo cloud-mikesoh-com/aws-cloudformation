@@ -1,0 +1,45 @@
+Description: mikesoh-com Network Deployment
+Parameters:
+  deployDate:
+    Type: String
+    Description: Date for the deployment
+    Default: 1970-01-01 00:00:00
+  commitSha: 
+    Type: String
+    Description: Git commit SHA
+    Default: nocommit
+
+Resources:
+  NewCapricaMikeSohDBs:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc'
+      CidrBlock: "10.1.0.0/28"
+      AvailabilityZone: 'us-east-1d'
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: NewCaprica-MikeSoh-Databases-NoPublicEgress
+      - Key: PublicEgress
+        Value: FALSE
+
+  NewCapricaMikesohCompute:
+    Type: AWS::EC2::Subnet
+    DependsOn: 'NewCapricaIpv6CidrBlock'
+    Properties:
+      VpcId: !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc'
+      CidrBlock: "10.1.21.0/26"
+      Ipv6CidrBlock: !Select [ 2, !Cidr [ !Select [ 0, !GetAtt CreateNewCapricaVpc.Ipv6CidrBlocks ], 256, 64 ]]
+      AvailabilityZone: 'us-east-1d'
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: NewCaprica-MikeSoh-Compute
+      - Key: PublicEgress
+        Value: TRUE
+
+  MikesohComputeNaClAssociation:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      NetworkAclId: !GetAtt 'CreateNewCapricaVpc.DefaultNetworkAcl'
+      SubnetId: !Ref 'NewCapricaMikesohCompute'
