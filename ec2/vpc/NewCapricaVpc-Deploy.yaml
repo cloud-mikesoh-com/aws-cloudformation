@@ -63,7 +63,7 @@ Resources:
 
   NewCapricaMikesohCompute:
     Type: AWS::EC2::Subnet
-    DependsOn: 'NewCapricaIPv6CidrBlock'
+    DependsOn: 'NewCapricaIpv6CidrBlock'
     Properties:
       VpcId: !Ref 'CreateNewCapricaVpc'
       CidrBlock: "10.1.21.0/26"
@@ -78,7 +78,7 @@ Resources:
 
   NewCapricaGeneralComputeD:
     Type: AWS::EC2::Subnet
-    DependsOn: 'NewCapricaIPv6CidrBlock'
+    DependsOn: 'NewCapricaIpv6CidrBlock'
     Properties:
       VpcId: !Ref 'CreateNewCapricaVpc'
       CidrBlock: "10.1.100.0/24"
@@ -91,7 +91,7 @@ Resources:
 
   NewCapricaGeneralComputeB:
     Type: AWS::EC2::Subnet
-    DependsOn: 'NewCapricaIPv6CidrBlock'
+    DependsOn: 'NewCapricaIpv6CidrBlock'
     Properties:
       VpcId: !Ref 'CreateNewCapricaVpc'
       CidrBlock: "10.1.101.0/24"
