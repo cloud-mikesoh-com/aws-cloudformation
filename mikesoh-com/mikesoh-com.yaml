@@ -12,6 +12,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: Default Password for Database
     Default: '/us-east-1/rds/AdminPassword'
+  SshKeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
 
 Resources:
   NewCapricaMikeSohDBsAzD:
@@ -145,6 +149,7 @@ Resources:
       AllocatedStorage: 20
       MaxAllocatedStorage: 100
       StorageType: gp2
+      StorageEncrypted: true
       
       AvailabilityZone: 'us-east-1d'
       BackupRetentionPeriod: 7
@@ -161,7 +166,35 @@ Resources:
         - Key: environment
           Value: "testing"
 
-    InstanceType: 't3a.small'
+  MikesohStackCompute:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: 't3a.small'
+      ImageId: 'ami-0cf6c10214cc015c9'
+      IamInstanceProfile: 
+        Arn: 'arn:aws:iam::426869176820:instance-profile/ec2-user-role'
+      AvailabilityZone: 'us-east-1d'
+      DisableApiTermination: false
+      InstanceInitiatedShutdownBehavior: 'stop'
+      SubnetId: !Ref 'NewCapricaMikesohCompute'
+      KeyName: !Ref 'SshKeyName'
+
+      BlockDeviceMappings:
+        - DeviceName: '/dev/sda1'
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: true
+            VolumeSize: 50
+            VolumeType: gp3
+      
+      SecurityGroupIds:
+        - !Ref 'MikesohStackSG'
+        - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'  
 
 Outputs:
   MikeSohDBsAzDSubnet:
@@ -188,6 +221,11 @@ Outputs:
     Value: !Ref 'MikesohStackDatabase'
     Export: 
       Name: !Join [':', [ !Ref 'AWS::StackName', 'MikesohStackDatabase' ]]
+  
+  MikesohStackComputeInstanceId:
+    Value: !Ref 'MikesohStackCompute'
+    Export:
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'MikesohStackCompute' ]]
 
   ExportMikesohAppSG:
     Value: !Ref MikesohStackSG
