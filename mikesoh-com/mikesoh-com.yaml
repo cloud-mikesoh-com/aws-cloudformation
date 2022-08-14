@@ -161,6 +161,7 @@ Resources:
         - Key: environment
           Value: "testing"
 
+    InstanceType: 't3a.small'
 
 Outputs:
   MikeSohDBsAzDSubnet:
@@ -182,6 +183,11 @@ Outputs:
     Value: !Ref 'NewCapricaMikesohCompute'
     Export: 
       Name: !Join [':', [ !Ref 'AWS::StackName', 'NewCapricaMikesohCompute' ]]
+
+  MikesohStackDatabaseId:
+    Value: !Ref 'MikesohStackDatabase'
+    Export: 
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'MikesohStackDatabase' ]]
 
   ExportMikesohAppSG:
     Value: !Ref MikesohStackSG
