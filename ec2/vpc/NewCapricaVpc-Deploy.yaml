@@ -50,6 +50,34 @@ Resources:
       InternetGatewayId: !Ref 'NewCapricaInternetGateway'
       VpcId: !Ref 'CreateNewCapricaVpc'
 
+  NewCapricaPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'CreateNewCapricaVpc'
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: Name
+          Value: Public Routes for New Caprica
+  
+  NewCapricaDefaultIpv4PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: NewCapricaInternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref NewCapricaPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref NewCapricaInternetGateway
+
+  NewCapricaDefaultIpv6PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: NewCapricaInternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref NewCapricaPublicRouteTable
+      DestinationIpv6CidrBlock: ::/0
+      GatewayId: !Ref NewCapricaInternetGateway
+
   NewCapricaGeneralComputeD:
     Type: AWS::EC2::Subnet
     DependsOn: 'NewCapricaIpv6CidrBlock'
@@ -60,8 +88,18 @@ Resources:
       AvailabilityZone: 'us-east-1d'
       MapPublicIpOnLaunch: false
       Tags:
-      - Key: Name
-        Value: NewCaprica-General-Compute-D
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: Name
+          Value: NewCaprica-General-Compute-D
+
+  NewCapricaGeneralComputeDSubnetRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref NewCapricaPublicRouteTable
+      SubnetId: !Ref NewCapricaGeneralComputeD
 
   NewCapricaGeneralComputeB:
     Type: AWS::EC2::Subnet
@@ -73,8 +111,18 @@ Resources:
       AvailabilityZone: 'us-east-1b'
       MapPublicIpOnLaunch: false
       Tags:
-      - Key: Name
-        Value: NewCaprica-General-Compute-B
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: Name
+          Value: NewCaprica-General-Compute-B
+
+  NewCapricaGeneralComputeBSubnetRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref NewCapricaPublicRouteTable
+      SubnetId: !Ref NewCapricaGeneralComputeB
   
   NewCapricaFlowLogs:
     Type: 'AWS::EC2::FlowLog'
@@ -115,6 +163,11 @@ Outputs:
     Value: !Ref 'CreateNewCapricaVpc'
     Export: 
       Name: !Join [':', [ !Ref 'AWS::StackName', 'CreateNewCapricaVpc' ]]
+
+  ExportNewCapricaPublicRouteTable:
+    Value: !Ref 'NewCapricaPublicRouteTable'
+    Export:
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'NewCapricaPublicRouteTable' ]]
 
   NewCapricaIpv6CidrBlock:
     Value: !Select [ 0, !GetAtt 'CreateNewCapricaVpc.Ipv6CidrBlocks' ]
