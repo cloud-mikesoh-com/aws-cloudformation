@@ -128,9 +128,7 @@ Resources:
       Description: Allow all traffic from within the Security Group
       GroupId: !Ref 'MikesohStackSG'
       DestinationSecurityGroupId: !Ref 'MikesohStackSG'
-      IpProtocol: -1  
-  
-
+      IpProtocol: -1
 
   MikesohStackDatabase:
     Type: 'AWS::RDS::DBInstance'
@@ -143,7 +141,7 @@ Resources:
       MasterUserPassword: !Ref 'DatabasePassword'
 
       DBInstanceIdentifier: 'mikesoh-com-db-production'
-      DBInstanceClass: 'db.t3.micro'
+      DBInstanceClass: 'db.t4g.micro'
       AllocatedStorage: 20
       MaxAllocatedStorage: 100
       StorageType: gp2
