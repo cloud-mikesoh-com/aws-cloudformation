@@ -35,11 +35,11 @@ Resources:
         - Key: PublicEgress
           Value: TRUE
   
-  NewCapricaMikeSohDBsAzDSubnetRouteTable:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties: 
-      RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
-      SubnetId: !Ref NewCapricaMikeSohDBsAzD
+  # NewCapricaMikeSohDBsAzDSubnetRouteTable:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties: 
+  #     RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
+  #     SubnetId: !Ref NewCapricaMikeSohDBsAzD
 
   NewCapricaMikeSohDBsAzB:
     Type: AWS::EC2::Subnet
@@ -58,11 +58,11 @@ Resources:
         - Key: PublicEgress
           Value: FALSE
 
-  NewCapricaMikeSohDBsAzBSubnetRouteTable:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties: 
-      RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
-      SubnetId: !Ref NewCapricaMikeSohDBsAzB
+  # NewCapricaMikeSohDBsAzBSubnetRouteTable:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties: 
+  #     RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
+  #     SubnetId: !Ref NewCapricaMikeSohDBsAzB
 
   NewCapricaMikesohCompute:
     Type: AWS::EC2::Subnet
