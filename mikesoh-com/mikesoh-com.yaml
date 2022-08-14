@@ -29,8 +29,13 @@ Resources:
         - Key: Name
           Value: NewCaprica-MikeSoh-Az1D-Databases-NoPublicEgress
         - Key: PublicEgress
-          Value: FALSE
-
+          Value: TRUE
+  
+  NewCapricaMikeSohDBsAzDSubnetRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
+      SubnetId: !Ref NewCapricaMikeSohDBsAzD
 
   NewCapricaMikeSohDBsAzB:
     Type: AWS::EC2::Subnet
@@ -48,6 +53,12 @@ Resources:
           Value: NewCaprica-MikeSoh-Az1B-Databases-NoPublicEgress
         - Key: PublicEgress
           Value: FALSE
+
+  NewCapricaMikeSohDBsAzBSubnetRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
+      SubnetId: !Ref NewCapricaMikeSohDBsAzB
 
   NewCapricaMikesohCompute:
     Type: AWS::EC2::Subnet
@@ -73,6 +84,12 @@ Resources:
     Properties:
       NetworkAclId: !ImportValue NewCapricaVpc-Deploy:NewCapricaDefaultAcl
       SubnetId: !Ref 'NewCapricaMikesohCompute'
+
+  NewCapricaMikesohComputeSubnetRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
+      SubnetId: !Ref NewCapricaMikesohCompute
 
   MikesohDBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
@@ -115,36 +132,36 @@ Resources:
   
 
 
-  # MikesohStackDatabase:
-  #   Type: 'AWS::RDS::DBInstance'
-  #   Properties:
-  #     Engine: mariadb
-  #     EngineVersion: '10.6.8'
-  #     AllowMajorVersionUpgrade: false
-  #     AutoMinorVersionUpgrade: true
-  #     MasterUsername: 'admin'
-  #     MasterUserPassword: !Ref 'DatabasePassword'
+  MikesohStackDatabase:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      Engine: mariadb
+      EngineVersion: '10.6.8'
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      MasterUsername: 'admin'
+      MasterUserPassword: !Ref 'DatabasePassword'
 
-  #     DBInstanceIdentifier: 'mikesoh-com-db-production'
-  #     DBInstanceClass: 'db.t3.micro'
-  #     AllocatedStorage: 20
-  #     MaxAllocatedStorage: 100
-  #     StorageType: gp2
+      DBInstanceIdentifier: 'mikesoh-com-db-production'
+      DBInstanceClass: 'db.t3.micro'
+      AllocatedStorage: 20
+      MaxAllocatedStorage: 100
+      StorageType: gp2
       
-  #     AvailabilityZone: 'us-east-1d'
-  #     BackupRetentionPeriod: 7
-  #     DBSubnetGroupName: !Ref MikesohDBSubnetGroup
-  #     PubliclyAccessible: true
-  #     VPCSecurityGroups:
-  #       - !Ref 'MikesohStackSG'
-  #       - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
-  #     Tags:
-  #       - Key: managedBy
-  #         Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
-  #       - Key: deployDate
-  #         Value: !Ref 'deployDate'
-  #       - Key: environment
-  #         Value: "testing"
+      AvailabilityZone: 'us-east-1d'
+      BackupRetentionPeriod: 7
+      DBSubnetGroupName: !Ref MikesohDBSubnetGroup
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !Ref 'MikesohStackSG'
+        - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: environment
+          Value: "testing"
 
 
 Outputs:
