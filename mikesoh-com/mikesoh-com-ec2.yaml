@@ -1,4 +1,4 @@
-Description: mikesoh-com Network Deployment
+Description: mikesoh-com EC2 Deployment
 Parameters:
   deployDate:
     Type: String
@@ -18,7 +18,7 @@ Parameters:
     Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
 
 Resources:
-  MikesohStackCompute:
+  MikesohEc2Compute:
     Type: AWS::EC2::Instance
     Metadata: 
       AWS::CloudFormation::Init: 
@@ -190,7 +190,7 @@ Resources:
       AvailabilityZone: 'us-east-1d'
       DisableApiTermination: false
       InstanceInitiatedShutdownBehavior: 'stop'
-      SubnetId: !ImportValue 'mikesoh-com:NewCapricaMikesohCompute'
+      SubnetId: !ImportValue 'mikesoh-com:NewCapricaMikesohComputeSubnet'
       KeyName: !Ref 'SshKeyName'
 
       BlockDeviceMappings:
@@ -227,7 +227,7 @@ Resources:
             /opt/aws/bin/cfn-init -v \
               --stack ${AWS::StackName} \
               --region ${AWS::Region} \
-              --resource "MikesohStackCompute" \
+              --resource "MikesohEc2Compute" \
               --configsets "default"
 
             export AWS_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
@@ -245,7 +245,7 @@ Resources:
     Type: 'AWS::CloudFormation::WaitConditionHandle'
   SshKeyInstallCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohStackCompute'
+    DependsOn: 'MikesohEc2Compute'
     Properties:
       Count: 1
       Handle: !Ref 'SshKeyInstallHandle'
@@ -255,7 +255,7 @@ Resources:
     Type: 'AWS::CloudFormation::WaitConditionHandle'
   InstallAwsCliCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohStackCompute'
+    DependsOn: 'MikesohEc2Compute'
     Properties:
       Count: 1
       Handle: !Ref 'InstallAwsCliHandle'
@@ -265,7 +265,7 @@ Resources:
     Type: 'AWS::CloudFormation::WaitConditionHandle'
   InstallMonitoringAgentCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohStackCompute'
+    DependsOn: 'MikesohEc2Compute'
     Properties:
       Count: 1
       Handle: !Ref 'InstallMonitoringAgentHandle'
@@ -275,7 +275,7 @@ Resources:
     Type: 'AWS::CloudFormation::WaitConditionHandle'
   InstallDockerCeCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohStackCompute'
+    DependsOn: 'MikesohEc2Compute'
     Properties:
       Count: 1
       Handle: !Ref 'InstallDockerCeHandle'
@@ -285,7 +285,7 @@ Resources:
     Type: 'AWS::CloudFormation::WaitConditionHandle'
   HostNameCondition:
     Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohStackCompute'
+    DependsOn: 'MikesohEc2Compute'
     Properties:
       Count: 1
       Handle: !Ref 'HostNameHandle'
@@ -293,6 +293,11 @@ Resources:
 
 
 Outputs:
+  MikesohEc2ComputeInstanceId:
+    Value: !Ref 'MikesohEc2Compute'
+    Export:
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'MikesohEc2Compute' ]]
+
   AwsCliVersion:
     Description: Install Version of the AWS CLI
     Value: !GetAtt InstallAwsCliCondition.Data
