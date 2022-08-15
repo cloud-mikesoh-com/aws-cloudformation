@@ -171,8 +171,7 @@ Resources:
     Properties:
       InstanceType: 't3a.small'
       ImageId: 'ami-0cf6c10214cc015c9'
-      IamInstanceProfile: 
-        Arn: 'arn:aws:iam::426869176820:instance-profile/ec2-user-role'
+      IamInstanceProfile: 'arn:aws:iam::426869176820:instance-profile/ec2-user-role'
       AvailabilityZone: 'us-east-1d'
       DisableApiTermination: false
       InstanceInitiatedShutdownBehavior: 'stop'
