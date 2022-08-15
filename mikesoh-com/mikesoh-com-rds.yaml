@@ -44,7 +44,7 @@ Resources:
       DBSubnetGroupName: !Ref MikesohDBSubnetGroup
       PubliclyAccessible: !Ref 'DatabasePubliclyAvailable'
       VPCSecurityGroups:
-        - !ImportValue 'mikesoh-com:MikesohStackSG'
+        - !ImportValue 'mikesoh-com-networking:MikesohStackSG'
         - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
       Tags:
         - Key: managedBy

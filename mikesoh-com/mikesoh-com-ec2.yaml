@@ -26,9 +26,9 @@ Resources:
           default:
             - 'SshKeys' 
             - 'AwsCli'
+            - 'Docker'
             - 'Datadog'
             - 'StandardPackages'
-            - 'Docker'           
 
         SshKeys:
           files:
@@ -190,7 +190,7 @@ Resources:
       AvailabilityZone: 'us-east-1d'
       DisableApiTermination: false
       InstanceInitiatedShutdownBehavior: 'stop'
-      SubnetId: !ImportValue 'mikesoh-com:NewCapricaMikesohComputeSubnet'
+      SubnetId: !ImportValue 'mikesoh-com-networking:NewCapricaMikesohComputeSubnet'
       KeyName: !Ref 'SshKeyName'
 
       BlockDeviceMappings:
@@ -202,7 +202,7 @@ Resources:
             VolumeType: gp3
       
       SecurityGroupIds:
-        - !ImportValue 'mikesoh-com:MikesohStackSG'
+        - !ImportValue 'mikesoh-com-networking:MikesohStackSG'
         - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
       Tags:
         - Key: managedBy
