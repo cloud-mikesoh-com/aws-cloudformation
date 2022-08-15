@@ -12,10 +12,18 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: Default Password for Database
     Default: '/us-east-1/rds/AdminPassword'
+  DatabasePubliclyAvailable:
+    Type: String
+    Description: Whether the database is available publicly.
+    AllowedValues: ['true', 'false']
+    Default: false
   SshKeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
     Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
+
+Conditions:
+  AttachPublicRoutes: !Equals [ !Ref 'DatabasePubliclyAvailable', 'true' ]
 
 Resources:
   NewCapricaMikeSohDBsAzD:
@@ -24,7 +32,7 @@ Resources:
       VpcId: !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc'
       CidrBlock: "10.1.0.0/28"
       AvailabilityZone: 'us-east-1d'
-      MapPublicIpOnLaunch: true
+      MapPublicIpOnLaunch: !Ref 'DatabasePubliclyAvailable'
       Tags:
         - Key: managedBy
           Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
@@ -32,14 +40,15 @@ Resources:
           Value: !Ref 'deployDate'
         - Key: Name
           Value: NewCaprica-MikeSoh-Az1D-Databases-NoPublicEgress
-        - Key: PublicEgress
-          Value: TRUE
+        - Key: PublicIngress
+          Value: !Ref 'DatabasePubliclyAvailable'
   
-  # NewCapricaMikeSohDBsAzDSubnetRouteTable:
-  #   Type: AWS::EC2::SubnetRouteTableAssociation
-  #   Properties: 
-  #     RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
-  #     SubnetId: !Ref NewCapricaMikeSohDBsAzD
+  NewCapricaMikeSohDBsAzDSubnetRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: AttachPublicRoutes
+    Properties: 
+      RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
+      SubnetId: !Ref NewCapricaMikeSohDBsAzD
 
   NewCapricaMikeSohDBsAzB:
     Type: AWS::EC2::Subnet
@@ -47,7 +56,7 @@ Resources:
       VpcId: !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc'
       CidrBlock: "10.1.0.16/28"
       AvailabilityZone: 'us-east-1b'
-      MapPublicIpOnLaunch: false
+      MapPublicIpOnLaunch: !Ref 'DatabasePubliclyAvailable'
       Tags:
         - Key: managedBy
           Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
@@ -55,14 +64,15 @@ Resources:
           Value: !Ref 'deployDate'
         - Key: Name
           Value: NewCaprica-MikeSoh-Az1B-Databases-NoPublicEgress
-        - Key: PublicEgress
-          Value: FALSE
+        - Key: PublicIngress
+          Value: !Ref 'DatabasePubliclyAvailable'
 
-  # NewCapricaMikeSohDBsAzBSubnetRouteTable:
-  #   Type: AWS::EC2::SubnetRouteTableAssociation
-  #   Properties: 
-  #     RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
-  #     SubnetId: !Ref NewCapricaMikeSohDBsAzB
+  NewCapricaMikeSohDBsAzBSubnetRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: AttachPublicRoutes
+    Properties: 
+      RouteTableId: !ImportValue 'NewCapricaVpc-Deploy:NewCapricaPublicRouteTable'
+      SubnetId: !Ref NewCapricaMikeSohDBsAzB
 
   NewCapricaMikesohCompute:
     Type: AWS::EC2::Subnet
@@ -154,7 +164,7 @@ Resources:
       AvailabilityZone: 'us-east-1d'
       BackupRetentionPeriod: 7
       DBSubnetGroupName: !Ref MikesohDBSubnetGroup
-      PubliclyAccessible: true
+      PubliclyAccessible: !Ref 'DatabasePubliclyAvailable'
       VPCSecurityGroups:
         - !Ref 'MikesohStackSG'
         - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
@@ -171,7 +181,7 @@ Resources:
     Properties:
       InstanceType: 't3a.small'
       ImageId: 'ami-0cf6c10214cc015c9'
-      IamInstanceProfile: 'arn:aws:iam::426869176820:instance-profile/ec2-user-role'
+      IamInstanceProfile: 'ec2-user-role'
       AvailabilityZone: 'us-east-1d'
       DisableApiTermination: false
       InstanceInitiatedShutdownBehavior: 'stop'
