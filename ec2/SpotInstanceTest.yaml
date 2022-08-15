@@ -15,7 +15,7 @@ Parameters:
   Vpc:
     Description: The VPC that the EC2 instance should deploy into
     Type: String
-    Default: Caprica
+    Default: NewCaprica
     AllowedValues: ['Caprica', 'NewCaprica']
   InstanceType:
     Description: EC2 Instance Type.  Default is t3a.small
@@ -47,17 +47,8 @@ Parameters:
 Mappings:
   RegionUbuntuVersionAMI:
     us-east-1:
-      focal: ami-0439517b5e436bdab
+      focal: ami-0cf6c10214cc015c9
       jammy: ami-0f65ab0fd913bc7be
-    us-east-2:
-      focal: ami-06270ef18c41050c6
-      jammy: ami-079b3f6abda6a6372
-    us-west-1:
-      focal: ami-0b256f935d73b31de
-      jammy: ami-08daca4640726cc73
-    us-west-2:
-      focal: ami-04c92c2862766d9ed
-      jammy: ami-0c21533018816e490
   MaxSpotPrice:
     t3.micro: 
       SpotPrice: '0.005'
@@ -71,11 +62,6 @@ Mappings:
       SpotPrice: '0.015'
     t3a.medium: 
       SpotPrice: '0.015'
-  VpcSubnet:
-    Caprica:
-      subnet: "subnet-4615b26d"
-    NewCaprica:
-      subnet: "subnet-063ca2bb1a1d682a9"
 
 Conditions:
   InstallDockerCe: !Equals
@@ -304,9 +290,9 @@ Resources:
                     Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
                   - Key: deployDate
                     Value: !Ref 'deployDate'
-            SubnetId: !FindInMap [VpcSubnet, !Ref 'Vpc', 'subnet']
+            SubnetId: !If [ GalacticaSg, "subnet-4615b26d", !ImportValue 'mikesoh-com:NewCapricaMikesohCompute' ]
             SecurityGroups:
-              - GroupId: !If [ GalacticaSg, !ImportValue Galactica-SG-Deploy:galacticaSG, !ImportValue CapricaVpc-Deploy:galacticaSG ]
+              - GroupId: !If [ GalacticaSg, !ImportValue 'Galactica-SG-Deploy:galacticaSG', !ImportValue 'NewCapricaVpc-Deploy:galacticaSG' ]
             KeyName: !Ref KeyName
             BlockDeviceMappings:
               - DeviceName: '/dev/sda1'
