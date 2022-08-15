@@ -17,10 +17,6 @@ Parameters:
     Description: Whether the database is available publicly.
     AllowedValues: ['true', 'false']
     Default: false
-  SshKeyName:
-    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
-    Type: 'AWS::EC2::KeyPair::KeyName'
-    Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
 
 Conditions:
   AttachPublicRoutes: !Equals [ !Ref 'DatabasePubliclyAvailable', 'true' ]
@@ -175,35 +171,6 @@ Resources:
           Value: !Ref 'deployDate'
         - Key: environment
           Value: "testing"
-
-  MikesohStackCompute:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: 't3a.small'
-      ImageId: 'ami-0cf6c10214cc015c9'
-      IamInstanceProfile: 'ec2-user-role'
-      AvailabilityZone: 'us-east-1d'
-      DisableApiTermination: false
-      InstanceInitiatedShutdownBehavior: 'stop'
-      SubnetId: !Ref 'NewCapricaMikesohCompute'
-      KeyName: !Ref 'SshKeyName'
-
-      BlockDeviceMappings:
-        - DeviceName: '/dev/sda1'
-          Ebs:
-            DeleteOnTermination: true
-            Encrypted: true
-            VolumeSize: 50
-            VolumeType: gp3
-      
-      SecurityGroupIds:
-        - !Ref 'MikesohStackSG'
-        - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
-      Tags:
-        - Key: managedBy
-          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
-        - Key: deployDate
-          Value: !Ref 'deployDate'  
 
 Outputs:
   MikeSohDBsAzDSubnet:

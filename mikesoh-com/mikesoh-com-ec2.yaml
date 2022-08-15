@@ -1,0 +1,306 @@
+Description: mikesoh-com Network Deployment
+Parameters:
+  deployDate:
+    Type: String
+    Description: Date for the deployment
+    Default: 1970-01-01 00:00:00
+  commitSha: 
+    Type: String
+    Description: Git commit SHA
+    Default: nocommit
+  DatadogApiKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Key for Datadog
+    Default: '/us-east-1/datadog'
+  SshKeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
+
+Resources:
+  MikesohStackCompute:
+    Type: AWS::EC2::Instance
+    Metadata: 
+      AWS::CloudFormation::Init: 
+        configSets: 
+          default:
+            - 'SshKeys' 
+            - 'AwsCli'
+            - 'Datadog'
+            - 'StandardPackages'
+            - 'Docker'           
+
+        SshKeys:
+          files:
+            /home/ubuntu/.ssh/authorized_keys:
+              source: 'https://github.com/sohmc/ssh-keys/releases/download/latest/authorized_keys'
+              mode: '000600'
+              owner: ubuntu
+              group: ubuntu
+          
+          commands:
+            SshKeyInstallSignal:
+              test: test -e /home/ubuntu/.ssh/authorized_keys
+              ignoreErrors: false
+              command: !Sub |
+                  #!/bin/bash -xe
+
+                  echo "Sending signal for SshKeyInstall" >> /var/log/caprica-init.log
+
+                  FILESIZE=$(stat -c%s "~ubuntu/.ssh/authorized_keys")
+
+                  echo "Checking filesize of authorized_keys" >> /var/log/caprica-init.log
+                  test -e ${!FILESIZE} > 150
+
+                  /opt/aws/bin/cfn-signal -e $? \
+                    --stack ${AWS::StackName} \
+                    --region ${AWS::Region} \
+                    --reason "ssh authorized_keys size: ${!FILESIZE} -- exit code: $?" \
+                    --data "ssh authorized_keys size: ${!FILESIZE} -- exit code: $?" \
+                    '${SshKeyInstallHandle}'
+
+                  echo "Done" >> /var/log/caprica-init.log
+
+        Datadog: 
+          services:
+            DatadogService:
+              enabled: true
+              ensureRunning: true
+              commands:
+                - InstallDatadogAgent
+
+          commands:
+            InstallDatadogAgent:
+              env:
+                DD_API_KEY: !Sub "${DatadogApiKey}"
+              command: |
+                #!/bin/bash -xe
+                cd /tmp
+                echo "standard:DatadogAgent" >> /var/log/caprica-init.log
+                curl -Ls https://raw.githubusercontent.com/DataDog/datadog-agent/master/cmd/agent/install_script.sh -o install_datadog.sh
+                bash install_datadog.sh
+
+                sed -i 's/^# logs_enabled: false$/logs_enabled: true/' /etc/datadog-agent/datadog.yaml
+                systemctl stop datadog-agent.service && systemctl start datadog-agent.service
+
+            SignalDatadogAgentCondition:
+              test: test -e /usr/bin/datadog-agent
+              ignoreErrors: false
+              command: !Sub |
+                #!/bin/bash -xe
+
+                /usr/bin/datadog-agent version
+
+                /opt/aws/bin/cfn-signal -e $? \
+                  --stack ${AWS::StackName} \
+                  --region ${AWS::Region} \
+                  --reason "DatadogAgent_version: $(/usr/bin/datadog-agent version) -- exit code: $?" \
+                  --data "DatadogAgent_version: $(/usr/bin/datadog-agent version) -- exit code: $?" \
+                  '${InstallMonitoringAgentHandle}'
+
+                /usr/bin/datadog-agent version >> /var/log/caprica-init.log
+
+        AwsCli:
+          packages:
+            apt:
+              zip: []
+              unzip: []
+          commands: 
+            InstallAwsCli:
+              ignoreErrors: true
+              command: !Sub |
+                #!/bin/bash -xe
+                cd /tmp
+
+                echo 'starting AWS CLI installation' >> /var/log/caprica-init.log
+                whoami >> /var/log/caprica-init.log
+
+                curl -Ls 'https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/main/packages/01-awscli.sh' -o awscli.sh
+                bash awscli.sh
+
+                aws --version
+                
+                /opt/aws/bin/cfn-signal -e $? \
+                  --stack ${AWS::StackName} \
+                  --region ${AWS::Region} \
+                  --reason "awsCli_version: $(aws --version) -- exit code: $?" \
+                  --data "awsCli_version: $(aws --version) -- exit code: $?" \
+                  '${InstallAwsCliHandle}'
+
+                aws --version >> /var/log/caprica-init.log
+
+        Docker:
+          services:
+            DockerCeService:
+              enabled: true
+              ensureRunning: true
+              commands:
+                - InstallDockerCE
+
+          commands:
+            InstallDockerCE:
+              ignoreErrors: true
+              command: |
+                #!/bin/bash -xe
+                cd /tmp
+
+                echo 'Starting Docker-CE installation...' >> /var/log/caprica-init.log
+
+                curl -Ls 'https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/main/packages/50-docker.sh' -o docker.sh
+                bash docker.sh
+
+                /usr/sbin/usermod -aG docker ubuntu
+            
+            SignalInstallDockerCeCondition:
+              test: test -e /usr/bin/docker
+              ignoreErrors: false
+              command: !Sub |
+                #!/bin/bash -xe
+
+                /usr/bin/docker --version
+
+                /opt/aws/bin/cfn-signal -e $? \
+                  --stack ${AWS::StackName} \
+                  --region ${AWS::Region} \
+                  --reason "Docker_version: $(/usr/bin/docker --version) -- exit code: $?" \
+                  --data "Docker_version: $(/usr/bin/docker --version) -- exit code: $?" \
+                  '${InstallDockerCeHandle}'
+
+                /usr/bin/docker --version >> /var/log/caprica-init.log
+
+                echo 'Docker install completed' >> /var/log/caprica-init.log
+
+        StandardPackages:
+          packages:
+            apt:
+              mariadb-client: []
+              nginx: []
+          users:
+            mike:
+              groups: [ 'docker' ]
+              uid: 1501
+            linus:
+              groups: [ 'docker' ]
+              uid: 1502
+
+    Properties:
+      InstanceType: 't3a.small'
+      ImageId: 'ami-0cf6c10214cc015c9'
+      IamInstanceProfile: 'ec2-user-role'
+      AvailabilityZone: 'us-east-1d'
+      DisableApiTermination: false
+      InstanceInitiatedShutdownBehavior: 'stop'
+      SubnetId: !ImportValue 'mikesoh-com:NewCapricaMikesohCompute'
+      KeyName: !Ref 'SshKeyName'
+
+      BlockDeviceMappings:
+        - DeviceName: '/dev/sda1'
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: true
+            VolumeSize: 50
+            VolumeType: gp3
+      
+      SecurityGroupIds:
+        - !ImportValue 'mikesoh-com:MikesohStackSG'
+        - !ImportValue 'NewCapricaVpc-Deploy:galacticaSG'
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+      
+      UserData: 
+        Fn::Base64:
+          !Sub | 
+            #!/bin/bash -xe
+            # This file should be copied into the User Data section of creating AWS
+            # EC2 instances.
+
+            echo Installing aws-cfn-bootstrap
+            curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz -o /tmp/aws-cfn-bootstrap.tar.gz
+
+            mkdir -p /opt/aws/bin
+            python3 -m easy_install --script-dir /opt/aws/bin /tmp/aws-cfn-bootstrap.tar.gz
+
+            echo Initializing instance...
+            /opt/aws/bin/cfn-init -v \
+              --stack ${AWS::StackName} \
+              --region ${AWS::Region} \
+              --resource "MikesohStackCompute" \
+              --configsets "default"
+
+            export AWS_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
+            echo Sending signal: $?
+            /opt/aws/bin/cfn-signal -e $? \
+              --stack ${AWS::StackName} \
+              --region ${AWS::Region} \
+              --data "ipv4_hostname: ${!AWS_HOSTNAME}" \
+              --reason "ipv4_hostname: ${!AWS_HOSTNAME}" \
+              '${HostNameHandle}'
+
+
+# Handles and Wait Conditions
+  SshKeyInstallHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  SshKeyInstallCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'MikesohStackCompute'
+    Properties:
+      Count: 1
+      Handle: !Ref 'SshKeyInstallHandle'
+      Timeout: 600
+
+  InstallAwsCliHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  InstallAwsCliCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'MikesohStackCompute'
+    Properties:
+      Count: 1
+      Handle: !Ref 'InstallAwsCliHandle'
+      Timeout: 600
+
+  InstallMonitoringAgentHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  InstallMonitoringAgentCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'MikesohStackCompute'
+    Properties:
+      Count: 1
+      Handle: !Ref 'InstallMonitoringAgentHandle'
+      Timeout: 600
+
+  InstallDockerCeHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  InstallDockerCeCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'MikesohStackCompute'
+    Properties:
+      Count: 1
+      Handle: !Ref 'InstallDockerCeHandle'
+      Timeout: 600
+
+  HostNameHandle: 
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  HostNameCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    DependsOn: 'MikesohStackCompute'
+    Properties:
+      Count: 1
+      Handle: !Ref 'HostNameHandle'
+      Timeout: 600
+
+
+Outputs:
+  AwsCliVersion:
+    Description: Install Version of the AWS CLI
+    Value: !GetAtt InstallAwsCliCondition.Data
+
+  MonitorAgentVersion:
+    Description: Version of the Monitoring Agent Installed
+    Value: !GetAtt InstallMonitoringAgentCondition.Data
+
+  DockerCeVersion:
+    Description: Version of the Docker Agent Installed
+    Value: !GetAtt InstallDockerCeCondition.Data
