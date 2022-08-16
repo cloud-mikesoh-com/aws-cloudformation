@@ -14,12 +14,10 @@ Parameters:
     Default: Caprica
     AllowedValues: ['Caprica', 'NewCaprica']
 
-Mappings:
-  VpcMap:
-    Caprica:
-      VpcId: "vpc-44d99a21"
-    NewCaprica:
-      VpcId: "vpc-0698cc002d93aa5dc"
+Conditions:
+  TargetVpc: !Equals
+    - !Ref Vpc
+    - 'Caprica'
 
 Resources:
   AllowPingSG:
@@ -27,7 +25,7 @@ Resources:
     Properties:
       GroupDescription: Allow ICMP Ping
       GroupName: !Join ['-', [ !Ref 'Vpc', 'Allow Ping [managed]' ]]
-      VpcId: !FindInMap [VpcMap, !Ref 'Vpc', 'VpcId']
+      VpcId: !If [ TargetVpc, "vpc-44d99a21", !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc' ]
       SecurityGroupIngress:
         - IpProtocol: icmp
           FromPort: -1
@@ -44,7 +42,7 @@ Resources:
     Properties:
       GroupDescription: Open Standard Web Ports
       GroupName: !Join ['-', [ !Ref 'Vpc', 'Web Ports [managed]' ]]
-      VpcId: !FindInMap [VpcMap, !Ref 'Vpc', 'VpcId']
+      VpcId: !If [ TargetVpc, "vpc-44d99a21", !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc' ]
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -65,7 +63,7 @@ Resources:
     Properties:
       GroupDescription: Allow Email Ports
       GroupName: !Join ['-', [ !Ref 'Vpc', 'Email Ports [managed]' ]]
-      VpcId: !FindInMap [VpcMap, !Ref 'Vpc', 'VpcId']
+      VpcId: !If [ TargetVpc, "vpc-44d99a21", !ImportValue 'NewCapricaVpc-Deploy:CreateNewCapricaVpc' ]
       SecurityGroupIngress:
         - Description: SMTPS
           IpProtocol: tcp
