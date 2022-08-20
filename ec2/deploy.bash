@@ -21,3 +21,7 @@ aws cloudformation ${VERB} \
       ParameterKey=deployDate,ParameterValue=${DEPLOY_DATE} \
       ParameterKey=commitSha,ParameterValue=${SHA} \
       ${@:3}
+
+
+# I need to figure out a way to make this more modular:
+# aws cloudformation create-stack --template-body file://SecurityGroup-Deploy.yaml --stack-name NewCaprica-SecurityGroup-Deploy --parameters ParameterKey=deployDate,ParameterValue=`date -Isec` ParameterKey=commitSha,ParameterValue=`git rev-parse HEAD` ParameterKey=Vpc,ParameterValue=NewCaprica
