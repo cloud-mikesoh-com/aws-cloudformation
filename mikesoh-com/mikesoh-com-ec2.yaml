@@ -115,6 +115,7 @@ Resources:
                 echo 'starting AWS CLI installation' >> /var/log/caprica-init.log
                 whoami >> /var/log/caprica-init.log
 
+                pwd >> /var/log/caprica-init.log
                 curl -Ls 'https://raw.githubusercontent.com/cloud-mikesoh-com/aws-bootstrap/main/packages/01-awscli.sh' -o awscli.sh
                 bash awscli.sh
 
@@ -184,8 +185,9 @@ Resources:
               uid: 1502
 
     Properties:
-      InstanceType: 't3a.small'
-      ImageId: 'ami-0cf6c10214cc015c9'
+      InstanceType: 't4g.small'
+      # Ubuntu 20.04 LTS Release 20220810 for arm64 instances
+      ImageId: 'ami-0e515f534acdabbd7'
       IamInstanceProfile: 'ec2-user-role'
       AvailabilityZone: 'us-east-1d'
       DisableApiTermination: false
