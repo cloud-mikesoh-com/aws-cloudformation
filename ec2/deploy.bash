@@ -4,6 +4,8 @@ export SHA=$(git rev-parse HEAD)
 export DEPLOY_DATE=$(date -Isec)
 export EXPIRY=$(date -u -Isec -d "+15 minutes" | sed 's/+00:00$/Z/')
 export VERB=''
+export STACK_NAME=''
+export UUID=$(cat /proc/sys/kernel/random/uuid)
 
 if [[ $1 == 'create' ]]; then
   VERB='create-stack'
@@ -14,9 +16,15 @@ else
   exit 1
 fi 
 
+if [[ $2 == 't4gSpot.yaml' ]]; then
+  STACK_NAME=${2%%.*}---${UUID}
+else 
+  STACK_NAME=${2%%.*}
+fi
+
 aws cloudformation ${VERB} \
   --template-body file://${2} \
-  --stack-name ${2%%.*} \
+  --stack-name ${STACK_NAME} \
   --parameters \
       ParameterKey=deployDate,ParameterValue=${DEPLOY_DATE} \
       ParameterKey=commitSha,ParameterValue=${SHA} \
