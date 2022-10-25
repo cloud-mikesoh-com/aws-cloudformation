@@ -1,0 +1,120 @@
+Description: Deploy Spot Instance
+Parameters:
+  commitSha: 
+    Type: String
+    Description: Git commit SHA
+    Default: nocommit
+  deployDate:
+    Type: String
+    Description: Date for the deployment
+    Default: '1970-01-01 00:00:00'
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
+  Vpc:
+    Description: The VPC that the EC2 instance should deploy into
+    Type: String
+    Default: NewCaprica
+    AllowedValues: ['Caprica', 'NewCaprica']
+  InstanceType:
+    Description: EC2 Instance Type.  Default is t3a.small
+    Type: String
+    Default: t4g.small
+    AllowedValues: ['t3a.micro', 't3a.small', 't3a.medium', 't4g.micro', 't4g.small', 't4g.medium']
+  UbuntuVersion:
+    Description: 'Ubuntu Version Name.  Valid values: focal, jammy.  Default focal'
+    Type: String
+    Default: focal
+    AllowedValues: ['focal', 'jammy']
+  NewRelicInfraKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: New Relic Infrastructure Key for New Relic
+    Default: '/us-east-1/new-relic/infrastructure'
+  DatadogApiKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Key for Datadog
+    Default: '/us-east-1/datadog'
+  Expiry:
+    Type: String
+    Description: Expiration for Spot Request
+    Default: '2030-12-31T23:59:59Z'
+  ConfigSet:
+    Type: String
+    Description: What config sets to run
+    Default: default
+
+Mappings:
+  RegionUbuntuVersionAMI:
+    us-east-1:
+      focal: ami-0e515f534acdabbd7
+      jammy: ami-0f65ab0fd913bc7be
+  MaxSpotPrice:
+    t4g.micro: 
+      SpotPrice: '0.003'
+    t3a.micro: 
+      SpotPrice: '0.005'
+    t4g.small: 
+      SpotPrice: '0.007'
+    t3a.small: 
+      SpotPrice: '0.01'
+    t4g.medium: 
+      SpotPrice: '0.02'
+    t3a.medium: 
+      SpotPrice: '0.015'
+
+Conditions:
+  InstallDockerCe: !Equals
+    - !Ref ConfigSet
+    - 'Docker'
+  GalacticaSg: !Equals
+    - !Ref Vpc
+    - 'Caprica'
+
+Resources:
+  SpotFleetRequest:
+    Type: 'AWS::EC2::SpotFleet'
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: lowestPrice
+        IamFleetRole: 'arn:aws:iam::426869176820:role/aws-service-role/spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet'
+        SpotPrice: !FindInMap [MaxSpotPrice, !Ref 'InstanceType', 'SpotPrice']
+        TargetCapacity: 1
+        Type: request
+        ValidUntil: !Ref Expiry
+        TerminateInstancesWithExpiration: false
+        LaunchSpecifications:
+          - EbsOptimized: false
+            InstanceType: !Ref 'InstanceType'
+            ImageId: !FindInMap [RegionUbuntuVersionAMI, !Ref 'AWS::Region', !Ref 'UbuntuVersion']
+            IamInstanceProfile: 
+              Arn: 'arn:aws:iam::426869176820:instance-profile/ec2-user-role'
+            TagSpecifications:
+              - ResourceType: instance
+                Tags:
+                  - Key: managedBy
+                    Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+                  - Key: deployDate
+                    Value: !Ref 'deployDate'
+            SubnetId: !If [ GalacticaSg, "subnet-4615b26d", !ImportValue 'mikesoh-com-networking:NewCapricaMikesohComputeSubnet' ]
+            SecurityGroups:
+              - GroupId: !If [ GalacticaSg, !ImportValue 'Galactica-SG-Deploy:galacticaSG', !ImportValue 'NewCapricaVpc-Deploy:galacticaSG' ]
+            KeyName: !Ref KeyName
+            BlockDeviceMappings:
+              - DeviceName: '/dev/sda1'
+                Ebs:
+                  DeleteOnTermination: false
+                  VolumeSize: 1000
+                  VolumeType: gp3
+            UserData: 
+              Fn::Base64:
+                !Sub | 
+                  #!/bin/bash -xe
+                  # This file should be copied into the User Data section of creating AWS
+                  # EC2 instances.
+
+                  echo Installing aws-cfn-bootstrap
+                  curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz -o /tmp/aws-cfn-bootstrap.tar.gz
+
+                  mkdir -p /opt/aws/bin
+                  python3 -m easy_install --script-dir /opt/aws/bin /tmp/aws-cfn-bootstrap.tar.gz
