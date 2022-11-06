@@ -11,7 +11,7 @@ Parameters:
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
-    Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
+    Default: mike-starbuck-ubuntu
   Vpc:
     Description: The VPC that the EC2 instance should deploy into
     Type: String
@@ -99,12 +99,13 @@ Resources:
             SubnetId: !If [ GalacticaSg, "subnet-4615b26d", !ImportValue 'mikesoh-com-networking:NewCapricaMikesohComputeSubnet' ]
             SecurityGroups:
               - GroupId: !If [ GalacticaSg, !ImportValue 'Galactica-SG-Deploy:galacticaSG', !ImportValue 'NewCapricaVpc-Deploy:galacticaSG' ]
+              - GroupId: !ImportValue 'mikesoh-com-networking:MikesohStackSG'
             KeyName: !Ref KeyName
             BlockDeviceMappings:
               - DeviceName: '/dev/sda1'
                 Ebs:
-                  DeleteOnTermination: false
-                  VolumeSize: 1000
+                  DeleteOnTermination: true
+                  VolumeSize: 10
                   VolumeType: gp3
             UserData: 
               Fn::Base64:
@@ -112,9 +113,7 @@ Resources:
                   #!/bin/bash -xe
                   # This file should be copied into the User Data section of creating AWS
                   # EC2 instances.
+                  BOOTSTRAP_FILE="https://github.com/cloud-mikesoh-com/aws-bootstrap/raw/main/packages/mariadb-client.sh"
 
-                  echo Installing aws-cfn-bootstrap
-                  curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz -o /tmp/aws-cfn-bootstrap.tar.gz
-
-                  mkdir -p /opt/aws/bin
-                  python3 -m easy_install --script-dir /opt/aws/bin /tmp/aws-cfn-bootstrap.tar.gz
+                  apt-get upgrade -y && apt-get autoremove -y
+                  bash <(curl -Lks $BOOTSTRAP_FILE)
