@@ -1,0 +1,41 @@
+Description: mikesoh-com DynamoDB - MailAliases
+Parameters:
+  deployDate:
+    Type: String
+    Description: Date for the deployment
+    Default: 1970-01-01 00:00:00
+  commitSha:
+    Type: String
+    Description: Git commit SHA
+    Default: nocommit
+
+Resources:
+  MikesohStackDynamoDbTableMailAliases:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      # TableName: mikesoh-com-MailAliases
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      AttributeDefinitions: 
+        - AttributeName: Alias
+          AttributeType: S
+        - AttributeName: Domain
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: Alias
+          KeyType: RANGE
+        - AttributeName: Domain
+          KeyType: HASH
+      Tags:
+        - Key: managedBy
+          Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
+        - Key: deployDate
+          Value: !Ref 'deployDate'
+        - Key: environment
+          Value: "testing"
+
+Outputs:
+  MikesohStackDynamoDbTableMailAliasesId:
+    Value: !Ref 'MikesohStackDynamoDbTableMailAliases'
+    Export:
+      Name: !Join [':', [ !Ref 'AWS::StackName', 'MikesohStackDynamoDbTableMailAliases' ]]
