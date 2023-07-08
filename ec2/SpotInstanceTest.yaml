@@ -25,7 +25,7 @@ Parameters:
   UbuntuVersion:
     Description: 'Ubuntu Version Name.  Valid values: focal, jammy.  Default focal'
     Type: String
-    Default: focal
+    Default: jammy
     AllowedValues: ['focal', 'jammy']
   NewRelicInfraKey:
     Type: AWS::SSM::Parameter::Value<String>
@@ -48,7 +48,7 @@ Mappings:
   RegionUbuntuVersionAMI:
     us-east-1:
       focal: ami-0cf6c10214cc015c9
-      jammy: ami-0f65ab0fd913bc7be
+      jammy: ami-0f1bae6c3bedcc3b5
   MaxSpotPrice:
     t3.micro: 
       SpotPrice: '0.005'
@@ -80,7 +80,7 @@ Resources:
           default:
             - 'SshKeys' 
             - 'AwsCli'
-            # - 'Datadog'
+            - 'Datadog'
           Docker:
             - ConfigSet: default
             - 'Docker'

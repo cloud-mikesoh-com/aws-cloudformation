@@ -20,7 +20,7 @@ Parameters:
   InstanceType:
     Description: EC2 Instance Type.  Default is t3a.small
     Type: String
-    Default: t4g.small
+    Default: t4g.micro
     AllowedValues: ['t3a.micro', 't3a.small', 't3a.medium', 't4g.micro', 't4g.small', 't4g.medium']
   UbuntuVersion:
     Description: 'Ubuntu Version Name.  Valid values: focal, jammy.  Default focal'
@@ -48,7 +48,7 @@ Mappings:
   RegionUbuntuVersionAMI:
     us-east-1:
       focal: ami-0e515f534acdabbd7
-      jammy: ami-0f65ab0fd913bc7be
+      jammy: ami-061cb6519faa3b92e
   MaxSpotPrice:
     t4g.micro: 
       SpotPrice: '0.003'
@@ -116,4 +116,4 @@ Resources:
                   BOOTSTRAP_FILE="https://github.com/cloud-mikesoh-com/aws-bootstrap/raw/main/packages/mariadb-client.sh"
 
                   apt-get upgrade -y && apt-get autoremove -y
-                  bash <(curl -Lks $BOOTSTRAP_FILE)
+                  # bash <(curl -Lks $BOOTSTRAP_FILE)

@@ -1,6 +1,7 @@
 #!/bin/bash -xe
 
 export SHA=$(git rev-parse HEAD)
+export SHA_SHORT=$(echo ${SHA} | cut -c 1-7)
 export DEPLOY_DATE=$(date -Isec)
 export EXPIRY=$(date -u -Isec -d "+15 minutes" | sed 's/+00:00$/Z/')
 export VERB=''
@@ -28,6 +29,7 @@ aws cloudformation ${VERB} \
   --parameters \
       ParameterKey=deployDate,ParameterValue=${DEPLOY_DATE} \
       ParameterKey=commitSha,ParameterValue=${SHA} \
+#      ParameterKey=commitShaShort,ParameterValue=${SHA_SHORT} \
       ${@:3}
 
 

@@ -15,7 +15,7 @@ Parameters:
   SshKeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
-    Default: starbuck-wsl-ubuntu-ed25519-2021.12.23
+    Default: mike-starbuck-ubuntu
 
 Resources:
   MikesohEc2Compute:
@@ -52,13 +52,6 @@ Resources:
                   echo "Checking filesize of authorized_keys" >> /var/log/caprica-init.log
                   test -e ${!FILESIZE} > 150
 
-                  /opt/aws/bin/cfn-signal -e $? \
-                    --stack ${AWS::StackName} \
-                    --region ${AWS::Region} \
-                    --reason "ssh authorized_keys size: ${!FILESIZE} -- exit code: $?" \
-                    --data "ssh authorized_keys size: ${!FILESIZE} -- exit code: $?" \
-                    '${SshKeyInstallHandle}'
-
                   echo "Done" >> /var/log/caprica-init.log
 
         Datadog: 
@@ -90,14 +83,6 @@ Resources:
                 #!/bin/bash -xe
 
                 /usr/bin/datadog-agent version
-
-                /opt/aws/bin/cfn-signal -e $? \
-                  --stack ${AWS::StackName} \
-                  --region ${AWS::Region} \
-                  --reason "DatadogAgent_version: $(/usr/bin/datadog-agent version) -- exit code: $?" \
-                  --data "DatadogAgent_version: $(/usr/bin/datadog-agent version) -- exit code: $?" \
-                  '${InstallMonitoringAgentHandle}'
-
                 /usr/bin/datadog-agent version >> /var/log/caprica-init.log
 
         AwsCli:
@@ -120,14 +105,6 @@ Resources:
                 bash awscli.sh
 
                 aws --version
-                
-                /opt/aws/bin/cfn-signal -e $? \
-                  --stack ${AWS::StackName} \
-                  --region ${AWS::Region} \
-                  --reason "awsCli_version: $(aws --version) -- exit code: $?" \
-                  --data "awsCli_version: $(aws --version) -- exit code: $?" \
-                  '${InstallAwsCliHandle}'
-
                 aws --version >> /var/log/caprica-init.log
 
         Docker:
@@ -159,16 +136,7 @@ Resources:
                 #!/bin/bash -xe
 
                 /usr/bin/docker --version
-
-                /opt/aws/bin/cfn-signal -e $? \
-                  --stack ${AWS::StackName} \
-                  --region ${AWS::Region} \
-                  --reason "Docker_version: $(/usr/bin/docker --version) -- exit code: $?" \
-                  --data "Docker_version: $(/usr/bin/docker --version) -- exit code: $?" \
-                  '${InstallDockerCeHandle}'
-
                 /usr/bin/docker --version >> /var/log/caprica-init.log
-
                 echo 'Docker install completed' >> /var/log/caprica-init.log
 
         StandardPackages:
@@ -186,8 +154,8 @@ Resources:
 
     Properties:
       InstanceType: 't4g.small'
-      # Ubuntu 20.04 LTS Release 20220810 for arm64 instances
-      ImageId: 'ami-0e515f534acdabbd7'
+      # Ubuntu 22.04 LTS Release 20230516 for arm64 instances
+      ImageId: 'ami-0a0c8eebcdd6dcbd0'
       IamInstanceProfile: 'ec2-user-role'
       AvailabilityZone: 'us-east-1d'
       DisableApiTermination: false
@@ -211,103 +179,9 @@ Resources:
           Value: !Join ['-', ['CloudFormationDeployment', !Ref 'commitSha'] ]
         - Key: deployDate
           Value: !Ref 'deployDate'
-      
-      UserData: 
-        Fn::Base64:
-          !Sub | 
-            #!/bin/bash -xe
-            # This file should be copied into the User Data section of creating AWS
-            # EC2 instances.
-
-            echo Installing aws-cfn-bootstrap
-            curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz -o /tmp/aws-cfn-bootstrap.tar.gz
-
-            mkdir -p /opt/aws/bin
-            python3 -m easy_install --script-dir /opt/aws/bin /tmp/aws-cfn-bootstrap.tar.gz
-
-            echo Initializing instance...
-            /opt/aws/bin/cfn-init -v \
-              --stack ${AWS::StackName} \
-              --region ${AWS::Region} \
-              --resource "MikesohEc2Compute" \
-              --configsets "default"
-
-            export AWS_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
-            echo Sending signal: $?
-            /opt/aws/bin/cfn-signal -e $? \
-              --stack ${AWS::StackName} \
-              --region ${AWS::Region} \
-              --data "ipv4_hostname: ${!AWS_HOSTNAME}" \
-              --reason "ipv4_hostname: ${!AWS_HOSTNAME}" \
-              '${HostNameHandle}'
-
-
-# Handles and Wait Conditions
-  SshKeyInstallHandle: 
-    Type: 'AWS::CloudFormation::WaitConditionHandle'
-  SshKeyInstallCondition:
-    Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohEc2Compute'
-    Properties:
-      Count: 1
-      Handle: !Ref 'SshKeyInstallHandle'
-      Timeout: 600
-
-  InstallAwsCliHandle: 
-    Type: 'AWS::CloudFormation::WaitConditionHandle'
-  InstallAwsCliCondition:
-    Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohEc2Compute'
-    Properties:
-      Count: 1
-      Handle: !Ref 'InstallAwsCliHandle'
-      Timeout: 600
-
-  InstallMonitoringAgentHandle: 
-    Type: 'AWS::CloudFormation::WaitConditionHandle'
-  InstallMonitoringAgentCondition:
-    Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohEc2Compute'
-    Properties:
-      Count: 1
-      Handle: !Ref 'InstallMonitoringAgentHandle'
-      Timeout: 600
-
-  InstallDockerCeHandle: 
-    Type: 'AWS::CloudFormation::WaitConditionHandle'
-  InstallDockerCeCondition:
-    Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohEc2Compute'
-    Properties:
-      Count: 1
-      Handle: !Ref 'InstallDockerCeHandle'
-      Timeout: 600
-
-  HostNameHandle: 
-    Type: 'AWS::CloudFormation::WaitConditionHandle'
-  HostNameCondition:
-    Type: 'AWS::CloudFormation::WaitCondition'
-    DependsOn: 'MikesohEc2Compute'
-    Properties:
-      Count: 1
-      Handle: !Ref 'HostNameHandle'
-      Timeout: 600
-
 
 Outputs:
   MikesohEc2ComputeInstanceId:
     Value: !Ref 'MikesohEc2Compute'
     Export:
       Name: !Join [':', [ !Ref 'AWS::StackName', 'MikesohEc2Compute' ]]
-
-  AwsCliVersion:
-    Description: Install Version of the AWS CLI
-    Value: !GetAtt InstallAwsCliCondition.Data
-
-  MonitorAgentVersion:
-    Description: Version of the Monitoring Agent Installed
-    Value: !GetAtt InstallMonitoringAgentCondition.Data
-
-  DockerCeVersion:
-    Description: Version of the Docker Agent Installed
-    Value: !GetAtt InstallDockerCeCondition.Data
